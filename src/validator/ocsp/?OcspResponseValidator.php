@@ -1,60 +1,19 @@
-/*
- * Copyright (c) 2020-2021 Estonian Information System Authority
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+<?php
 
-package eu.webeid.security.validator.ocsp;
+declare(strict_types=1);
 
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.ocsp.BasicOCSPResp;
-import org.bouncycastle.cert.ocsp.CertificateStatus;
-import org.bouncycastle.cert.ocsp.OCSPException;
-import org.bouncycastle.cert.ocsp.RevokedStatus;
-import org.bouncycastle.cert.ocsp.SingleResp;
-import org.bouncycastle.cert.ocsp.UnknownStatus;
-import org.bouncycastle.operator.ContentVerifierProvider;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
-import eu.webeid.security.exceptions.OCSPCertificateException;
-import eu.webeid.security.exceptions.UserCertificateOCSPCheckFailedException;
-import eu.webeid.security.exceptions.UserCertificateRevokedException;
+namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp;
 
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Objects;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-
-public final class OcspResponseValidator {
+final class OcspResponseValidator {
 
     /**
      * Indicates that a X.509 Certificates corresponding private key may be used by an authority to sign OCSP responses.
      * <p>
      * https://oidref.com/1.3.6.1.5.5.7.3.9
      */
-    private static final String OID_OCSP_SIGNING = "1.3.6.1.5.5.7.3.9";
+    private static final const OID_OCSP_SIGNING = "1.3.6.1.5.5.7.3.9";
 
-    private static final long ALLOWED_TIME_SKEW = TimeUnit.MINUTES.toMillis(15);
+    private static final const ALLOWED_TIME_SKEW = TimeUnit.MINUTES.toMillis(15);
 
     public static void validateHasSigningExtension(X509Certificate certificate) throws OCSPCertificateException {
         Objects.requireNonNull(certificate, "certificate");

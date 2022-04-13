@@ -1,88 +1,48 @@
-/*
- * Copyright (c) 2020-2021 Estonian Information System Authority
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+<?php
 
-package eu.webeid.security.validator;
+declare(strict_types=1);
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.webeid.security.authtoken.WebEidAuthToken;
-import eu.webeid.security.certificate.CertificateLoader;
-import eu.webeid.security.certificate.CertificateValidator;
-import eu.webeid.security.exceptions.JceException;
-import eu.webeid.security.exceptions.AuthTokenParseException;
-import eu.webeid.security.exceptions.AuthTokenException;
-import eu.webeid.security.validator.certvalidators.SubjectCertificateExpiryValidator;
-import eu.webeid.security.validator.certvalidators.SubjectCertificateNotRevokedValidator;
-import eu.webeid.security.validator.certvalidators.SubjectCertificatePolicyValidator;
-import eu.webeid.security.validator.certvalidators.SubjectCertificatePurposeValidator;
-import eu.webeid.security.validator.certvalidators.SubjectCertificateTrustedValidator;
-import eu.webeid.security.validator.certvalidators.SubjectCertificateValidatorBatch;
-import eu.webeid.security.validator.ocsp.OcspClient;
-import eu.webeid.security.validator.ocsp.OcspClientImpl;
-import eu.webeid.security.validator.ocsp.OcspServiceProvider;
-import eu.webeid.security.validator.ocsp.service.AiaOcspServiceConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+namespace muzosh\web_eid_authtoken_validation_php\validator;
 
-import java.io.IOException;
-import java.security.cert.CertStore;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
-import java.util.Set;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 
 /**
- * Provides the default implementation of {@link AuthTokenValidator}.
+ * Provides the default implementation of AuthTokenValidator.
  */
 final class AuthTokenValidatorImpl implements AuthTokenValidator {
 
-    private static final int TOKEN_MIN_LENGTH = 100;
-    private static final int TOKEN_MAX_LENGTH = 10000;
-    private static final Logger LOG = LoggerFactory.getLogger(AuthTokenValidatorImpl.class);
+    private const TOKEN_MIN_LENGTH = 100;
+    private const TOKEN_MAX_LENGTH = 10000;
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private $logger;
+    private $authTokenValidationConfiguration;
+    private $subjectCertificateValidators;
+    private $trustedCACertificateAnchors;
+    private $trustedCACertificateCertStore;
 
-    private final AuthTokenValidationConfiguration configuration;
-    private final SubjectCertificateValidatorBatch simpleSubjectCertificateValidators;
-    private final Set<TrustAnchor> trustedCACertificateAnchors;
-    private final CertStore trustedCACertificateCertStore;
     // OcspClient uses OkHttp internally.
     // OkHttp performs best when a single OkHttpClient instance is created and reused for all HTTP calls.
     // This is because each client holds its own connection pool and thread pools.
     // Reusing connections and threads reduces latency and saves memory.
-    private OcspClient ocspClient;
-    private OcspServiceProvider ocspServiceProvider;
-    private final AuthTokenSignatureValidator authTokenSignatureValidator;
+    private $ocspClient;
+    private $ocspServiceProvider;
+    private $authTokenSignatureValidator;
 
     /**
      * @param configuration configuration parameters for the token validator
      */
-    AuthTokenValidatorImpl(AuthTokenValidationConfiguration configuration) throws JceException {
+    public function __construct(AuthTokenValidationConfiguration $configuration) {
+		$this->logger = WebEidLogger::getLogger(AuthTokenValidatorImpl::class);
+
         // Copy the configuration object to make AuthTokenValidatorImpl immutable and thread-safe.
-        this.configuration = configuration.copy();
+        $this->configuration = $configuration;
 
         // Create and cache trusted CA certificate JCA objects for SubjectCertificateTrustedValidator and AiaOcspService.
-        trustedCACertificateAnchors = CertificateValidator.buildTrustAnchorsFromCertificates(configuration.getTrustedCACertificates());
-        trustedCACertificateCertStore = CertificateValidator.buildCertStoreFromCertificates(configuration.getTrustedCACertificates());
+        $this->trustedCACertificateAnchors = CertificateValidator.buildTrustAnchorsFromCertificates(configuration.getTrustedCACertificates());
+        $this->trustedCACertificateCertStore = CertificateValidator.buildCertStoreFromCertificates(configuration.getTrustedCACertificates());
 
-        simpleSubjectCertificateValidators = SubjectCertificateValidatorBatch.createFrom(
+        $this->subjectCertificateValidators = SubjectCertificateValidatorBatch.createFrom(
             new SubjectCertificateExpiryValidator(trustedCACertificateAnchors)::validateCertificateExpiry,
             SubjectCertificatePurposeValidator::validateCertificatePurpose,
             new SubjectCertificatePolicyValidator(configuration.getDisallowedSubjectCertificatePolicies())::validateCertificatePolicies
@@ -156,7 +116,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator {
         }
         final X509Certificate subjectCertificate = CertificateLoader.decodeCertificateFromBase64(token.getUnverifiedCertificate());
 
-        simpleSubjectCertificateValidators.executeFor(subjectCertificate);
+        subjectCertificateValidators.executeFor(subjectCertificate);
         getCertTrustValidators().executeFor(subjectCertificate);
 
         // It is guaranteed that if the signature verification succeeds, then the origin, challenge

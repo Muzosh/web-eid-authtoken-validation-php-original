@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php;
-
 class ExampleTest extends \PHPUnit\Framework\TestCase
 {
     /**

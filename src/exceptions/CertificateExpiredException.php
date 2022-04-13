@@ -11,7 +11,7 @@ use \Throwable;
  */
 class CertificateExpiredException extends AuthTokenException
 {
-	public function __construct(string $subject, Throwable $cause)
+	public function __construct(string $subject, Throwable $cause = null)
 	{
 		parent::__construct($subject . " certificate has expired", $cause);
 	}
