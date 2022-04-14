@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\certificate;
 
-use muzosh\web_eid_authtoken_validation_php\util\X509Array;
-use muzosh\web_eid_authtoken_validation_php\util\X509UniqueArray;
+use DateInterval;
+use DateTime;
+use DateTimeZone;
 use phpseclib3\File\X509;
 
 require __DIR__.'/vendor/autoload.php';
@@ -18,20 +19,22 @@ MIIEBDCCA2WgAwIBAgIQH9NeN14jo0ReaircrN2YvDAKBggqhkjOPQQDBDBgMQswCQYDVQQGEwJFRTEb
 $x509 = new X509();
 $seclib = $x509->loadX509($certificate);
 
-$certArray = array($x509, clone $x509, clone $x509);
+$test = $x509->getExtension('id-ce-extKeyUsage');
 
-$authorityInformationAccess = $x509->getExtension("id-pe-authorityInfoAccess");
-foreach ($authorityInformationAccess as $accessDescription) {
-    if ('id-ad-ocsp' === $accessDescription['accessMethod'] && array_key_exists("uniformResourceIdentifier", $accessDescription['accessLocation'])) {
-        $x = 10;
-    }
-}
-
-
-// $openssl = \openssl_x509_parse($certificate);
+// $opensslr = \openssl_x509_read($certificate);
+// $opensslp = \openssl_x509_parse($certificate);
 
 // title case
 // ucwords(strtolower($openssl['subject']['GN']), '\-');
+
+$dt = new DateTime('now', new DateTimeZone('Europe/Prague'));
+
+$seconds = 600;
+
+$dt2 = (clone $dt)->add(new DateInterval('PT'.$seconds.'S'));
+
+
+$dt3 = (clone $dt)->sub(new DateInterval('PT'.$seconds.'S'));
 
 
 $test = 10;

@@ -124,6 +124,12 @@ class X509Array extends CustomObjectArray
             throw new \TypeError('Can only insert '.X509::class);
         }
     }
+
+	public function getSubjectDNs(): array{
+		return array_map(function($item){
+			return $item->getSubjectDN(X509::DN_STRING);
+		}, $this->array);
+	}
 }
 
 final class X509UniqueArray extends X509Array
@@ -169,11 +175,6 @@ $ta->pushItem(clone $x509);
 // title case
 // ucwords(strtolower($openssl['subject']['GN']), '\-');
 
-foreach ($ta as $c) {
-    echo 'ta';
-}
-foreach ($ta as $c) {
-    echo 'taq';
-}
+$ar = $ta->getSubjectDNs();
 
 $test = 10;

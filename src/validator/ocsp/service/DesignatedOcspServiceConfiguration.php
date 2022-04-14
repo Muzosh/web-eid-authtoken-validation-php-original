@@ -28,7 +28,7 @@ class DesignatedOcspServiceConfiguration {
     public function __construct(array $ocspServiceAccessLocation, X509 $responderCertificate, X509Array $supportedCertificateIssuers, bool $doesSupportNonce) {
 		$this->ocspServiceAccessLocation = $ocspServiceAccessLocation;
 		$this->responderCertificate = $responderCertificate;
-        $this->supportedIssuers = $this->getIssuerX500Names($supportedCertificateIssuers);
+        $this->supportedIssuers = $supportedCertificateIssuers->getSubjectDNs();
         OcspResponseValidator::validateHasSigningExtension($responderCertificate);
         $this->doesSupportNonce = $doesSupportNonce;
     }
@@ -47,12 +47,6 @@ class DesignatedOcspServiceConfiguration {
 
     public function supportsIssuerOf(X509 $certificate) :bool {
         return in_array($certificate->getIssuerDN(X509::DN_STRING),$this->supportedIssuers, true);
-    }
-
-    private function getIssuerX500Names(X509Array $supportedIssuers) : array {
-		return array_map($supportedIssuers, function(&$value, $key){
-			$value = $value->getSubjectDN(X509::DN_STRING);
-		});
     }
 
     private function getSubject(X509 $certificate) : string {

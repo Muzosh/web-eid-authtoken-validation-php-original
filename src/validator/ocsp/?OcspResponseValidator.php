@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp;
 
+use BadFunctionCallException;
+
 final class OcspResponseValidator {
 
     /**
@@ -11,23 +13,19 @@ final class OcspResponseValidator {
      * <p>
      * https://oidref.com/1.3.6.1.5.5.7.3.9
      */
-    private static final const OID_OCSP_SIGNING = "1.3.6.1.5.5.7.3.9";
+    private static const OCSP_SIGNING = "id-kp-OCSPSigning";
 
-    private static final const ALLOWED_TIME_SKEW = TimeUnit.MINUTES.toMillis(15);
+	// 15 mins = 900 000 ms
+    private static final const ALLOWED_TIME_SKEW_SECONDS = 900;
 
-    public static void validateHasSigningExtension(X509Certificate certificate) throws OCSPCertificateException {
-        Objects.requireNonNull(certificate, "certificate");
-        try {
-            if (certificate.getExtendedKeyUsage() == null || !certificate.getExtendedKeyUsage().contains(OID_OCSP_SIGNING)) {
-                throw new OCSPCertificateException("Certificate " + certificate.getSubjectDN() +
-                    " does not contain the key usage extension for OCSP response signing");
-            }
-        } catch (CertificateParsingException e) {
-            throw new OCSPCertificateException("Certificate parsing failed:", e);
-        }
+    public static function validateHasSigningExtension(X509 $certificate):void {
+		if (!$certificate->getExtension('id-ce-extKeyUsage') || !in_array(OcspResponseValidator::OCSP_SIGNING,$certificate->getExtension('id-ce-extKeyUsage'))) {
+			throw new OCSPCertificateException("Certificate " . $certificate->getSubjectDN(X509::DN_STRING) .
+				" does not contain the key usage extension for OCSP response signing");
+		}
     }
 
-    public static void validateResponseSignature(BasicOCSPResp basicResponse, X509CertificateHolder responderCert) throws CertificateException, OperatorCreationException, OCSPException, UserCertificateOCSPCheckFailedException {
+    public static function validateResponseSignature(BasicOCSPResp $basicResponse, X509CertificateHolder $responderCert) :void {
         final ContentVerifierProvider verifierProvider = new JcaContentVerifierProviderBuilder()
             .setProvider("BC")
             .build(responderCert);
@@ -36,7 +34,7 @@ final class OcspResponseValidator {
         }
     }
 
-    public static void validateCertificateStatusUpdateTime(SingleResp certStatusResponse, Date producedAt) throws UserCertificateOCSPCheckFailedException {
+    public static function  validateCertificateStatusUpdateTime(SingleResp $certStatusResponse, DateTime $producedAt) : void {
         // From RFC 2560, https://www.ietf.org/rfc/rfc2560.txt:
         // 4.2.2.  Notes on OCSP Responses
         // 4.2.2.1.  Time
@@ -46,22 +44,22 @@ final class OcspResponseValidator {
         //   SHOULD be considered unreliable.
         //   If nextUpdate is not set, the responder is indicating that newer
         //   revocation information is available all the time.
-        final Date notAllowedBefore = new Date(producedAt.getTime() - ALLOWED_TIME_SKEW);
-        final Date notAllowedAfter = new Date(producedAt.getTime() + ALLOWED_TIME_SKEW);
-        if (notAllowedAfter.before(certStatusResponse.getThisUpdate()) ||
-            notAllowedBefore.after(certStatusResponse.getNextUpdate() != null ?
+        $notAllowedBefore = (clone $producedAt)->sub(new DateInterval('PT'.OcspResponseValidator::ALLOWED_TIME_SKEW_SECONDS.'S'));
+        $notAllowedAfter = (clone $producedAt)->add(new DateInterval('PT'.OcspResponseValidator::ALLOWED_TIME_SKEW_SECONDS.'S'));
+        if ($notAllowedAfter < certStatusResponse.getThisUpdate() ||
+            $notAllowedBefore > !is_null(certStatusResponse.getNextUpdate()) ?
                 certStatusResponse.getNextUpdate() :
-                certStatusResponse.getThisUpdate())) {
-            throw new UserCertificateOCSPCheckFailedException("Certificate status update time check failed: " +
-                "notAllowedBefore: " + toUtcString(notAllowedBefore) +
-                ", notAllowedAfter: " + toUtcString(notAllowedAfter) +
-                ", thisUpdate: " + toUtcString(certStatusResponse.getThisUpdate()) +
-                ", nextUpdate: " + toUtcString(certStatusResponse.getNextUpdate()));
+                certStatusResponse.getThisUpdate()) {
+            throw new UserCertificateOCSPCheckFailedException("Certificate status update time check failed: " .
+                "notAllowedBefore: " . toUtcString(notAllowedBefore) .
+                ", notAllowedAfter: " . toUtcString(notAllowedAfter) .
+                ", thisUpdate: " . toUtcString(certStatusResponse.getThisUpdate()) .
+                ", nextUpdate: " . toUtcString(certStatusResponse.getNextUpdate()));
         }
     }
 
-    public static void validateSubjectCertificateStatus(SingleResp certStatusResponse) throws UserCertificateRevokedException {
-        final CertificateStatus status = certStatusResponse.getCertStatus();
+    public static function validateSubjectCertificateStatus(SingleResp $certStatusResponse):void {
+        $status = certStatusResponse.getCertStatus();
         if (status == null) {
             return;
         }
@@ -77,16 +75,11 @@ final class OcspResponseValidator {
         }
     }
 
-    private static String toUtcString(Date date) {
-        if (date == null) {
-            return String.valueOf((Object) null);
-        }
-        final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-        dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return dateFormatter.format(date);
+    private static function toUtcString(DateTime $date):string {;
+		return ((clone $date)->setTimezone(new DateTimeZone("UTC")))->format("Y-m-d H:i:s e");
     }
 
-    private OcspResponseValidator() {
-        throw new IllegalStateException("Utility class");
+    private function __construct() {
+        throw new BadFunctionCallException("Utility class");
     }
 }

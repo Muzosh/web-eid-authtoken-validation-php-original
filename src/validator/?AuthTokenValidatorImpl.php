@@ -60,8 +60,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator {
         authTokenSignatureValidator = new AuthTokenSignatureValidator(configuration.getSiteOrigin());
     }
 
-    @Override
-    public WebEidAuthToken parse(String authToken) throws AuthTokenException {
+    public function parse(string $authToken):WebEidAuthToken {
         try {
             LOG.info("Starting token parsing");
             validateTokenLength(authToken);
@@ -73,8 +72,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator {
         }
     }
 
-    @Override
-    public X509Certificate validate(WebEidAuthToken authToken, String currentChallengeNonce) throws AuthTokenException {
+    public function validate(WebEidAuthToken $authToken, string $currentChallengeNonce):X509{
         try {
             LOG.info("Starting token validation");
             return validateToken(authToken, currentChallengeNonce);
@@ -85,7 +83,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator {
         }
     }
 
-    private void validateTokenLength(String authToken) throws AuthTokenParseException {
+    private function validateTokenLength(string $authToken):void {
         if (authToken == null || authToken.length() < TOKEN_MIN_LENGTH) {
             throw new AuthTokenParseException("Auth token is null or too short");
         }
@@ -94,7 +92,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator {
         }
     }
 
-    private WebEidAuthToken parseToken(String authToken) throws AuthTokenParseException {
+    private function parseToken(string $authToken) :WebEidAuthToken {
         try {
             final WebEidAuthToken token = objectMapper.readValue(authToken, WebEidAuthToken.class);
             if (token == null) {
@@ -106,7 +104,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator {
         }
     }
 
-    private X509Certificate validateToken(WebEidAuthToken token, String currentChallengeNonce) throws AuthTokenException {
+    private function validateToken(WebEidAuthToken $token, string $currentChallengeNonce):X509 {
         if (token.getFormat() == null || !token.getFormat().startsWith(CURRENT_TOKEN_FORMAT_VERSION)) {
             throw new AuthTokenParseException("Only token format version '" + CURRENT_TOKEN_FORMAT_VERSION +
                 "' is currently supported");
@@ -114,7 +112,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator {
         if (token.getUnverifiedCertificate() == null || token.getUnverifiedCertificate().isEmpty()) {
             throw new AuthTokenParseException("'unverifiedCertificate' field is missing, null or empty");
         }
-        final X509Certificate subjectCertificate = CertificateLoader.decodeCertificateFromBase64(token.getUnverifiedCertificate());
+        final X509 subjectCertificate = CertificateLoader.decodeCertificateFromBase64(token.getUnverifiedCertificate());
 
         subjectCertificateValidators.executeFor(subjectCertificate);
         getCertTrustValidators().executeFor(subjectCertificate);
@@ -138,7 +136,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator {
      *
      * @return certificate trust validator batch
      */
-    private SubjectCertificateValidatorBatch getCertTrustValidators() {
+    private function getCertTrustValidators(): SubjectCertificateValidatorBatch {
         final SubjectCertificateTrustedValidator certTrustedValidator =
             new SubjectCertificateTrustedValidator(trustedCACertificateAnchors, trustedCACertificateCertStore);
         return SubjectCertificateValidatorBatch.createFrom(
