@@ -32,6 +32,7 @@ interface AuthTokenValidator
      *
      * @param authToken the Web eID authentication token
      * @param currentChallengeNonce the challenge nonce that is associated with the authentication token
+     *
      * @return validated subject certificate
      */
     public function validate(WebEidAuthToken $authToken, string $currentChallengeNonce): X509;

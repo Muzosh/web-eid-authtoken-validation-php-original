@@ -4,26 +4,23 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
-import eu.webeid.security.exceptions.JceException;
-import eu.webeid.security.validator.ocsp.service.DesignatedOcspServiceConfiguration;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+use GuzzleHttp\Psr7\Uri;
+use Monolog\Logger;
+use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
+use muzosh\web_eid_authtoken_validation_php\util\X509Array;
+use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\DesignatedOcspServiceConfiguration;
+use phpseclib3\File\X509;
 
-import java.net.URI;
-import java.security.cert.X509Certificate;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.stream.Collectors;
+class AuthTokenValidatorBuilder
+{
+    private Logger $logger;
+    private AuthTokenValidationConfiguration $configuration;
 
-/**
- * Builder for constructing {@link AuthTokenValidator} instances.
- */
-public class AuthTokenValidatorBuilder {
-
-    private static final Logger LOG = LoggerFactory.getLogger(AuthTokenValidatorBuilder.class);
-
-    private final AuthTokenValidationConfiguration configuration = new AuthTokenValidationConfiguration();
+    public function __construct()
+    {
+        $this->logger = WebEidLogger::getLogger(AuthTokenValidatorBuilder::class);
+        $this->configuration = new AuthTokenValidationConfiguration();
+    }
 
     /**
      * Sets the expected site origin, i.e. the domain that the application is running on.
@@ -32,12 +29,15 @@ public class AuthTokenValidatorBuilder {
      *
      * @param origin origin URL as defined in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Location/origin">MDN</a>,
      *               in the form of {@code <scheme> "://" <hostname> [ ":" <port> ]}
+     *
      * @return the builder instance for method chaining
      */
-    public AuthTokenValidatorBuilder withSiteOrigin(URI origin) {
-        configuration.setSiteOrigin(origin);
-        LOG.debug("Origin set to {}", configuration.getSiteOrigin());
-        return this;
+    public function withSiteOrigin(URI $origin): AuthTokenValidatorBuilder
+    {
+        $this->configuration->setSiteOrigin($origin);
+        $this->logger->debug('Origin set to '.$this->configuration->getSiteOrigin());
+
+        return $this;
     }
 
     /**
@@ -49,17 +49,18 @@ public class AuthTokenValidatorBuilder {
      * At least one trusted intermediate Certificate Authority must be provided as a mandatory configuration parameter.
      *
      * @param certificates trusted intermediate Certificate Authority certificates
+     *
      * @return the builder instance for method chaining
      */
-    public AuthTokenValidatorBuilder withTrustedCertificateAuthorities(X509Certificate... certificates) {
-        Collections.addAll(configuration.getTrustedCACertificates(), certificates);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Trusted intermediate certificate authorities set to {}",
-                configuration.getTrustedCACertificates().stream()
-                    .map(X509Certificate::getSubjectDN)
-                    .collect(Collectors.toList()));
-        }
-        return this;
+    public function withTrustedCertificateAuthorities(X509 ...$certificates): AuthTokenValidatorBuilder
+    {
+        array_push($this->configuration->getTrustedCACertificates(), ...$certificates);
+
+        $this->logger->debug(
+            'Trusted intermediate certificate authorities set to '.json_encode(X509Array::getSubjectDNs(null, ...$this->configuration->getTrustedCACertificates()))
+        );
+
+        return $this;
     }
 
     /**
@@ -68,12 +69,15 @@ public class AuthTokenValidatorBuilder {
      * present in this list.
      *
      * @param policies disallowed user certificate policies
+     *
      * @return the builder instance for method chaining
      */
-    public AuthTokenValidatorBuilder withDisallowedCertificatePolicies(ASN1ObjectIdentifier... policies) {
-        Collections.addAll(configuration.getDisallowedSubjectCertificatePolicies(), policies);
-        LOG.debug("Disallowed subject certificate policies set to {}", configuration.getDisallowedSubjectCertificatePolicies());
-        return this;
+    public function withDisallowedCertificatePolicyIds(string ...$policies): AuthTokenValidatorBuilder
+    {
+        array_push($this->configuration->getDisallowedSubjectCertificatePolicyIds(), ...$policies);
+        $this->logger->debug('Disallowed subject certificate policies set to '.json_encode($this->configuration->getDisallowedSubjectCertificatePolicyIds()));
+
+        return $this;
     }
 
     /**
@@ -83,13 +87,15 @@ public class AuthTokenValidatorBuilder {
      * used only in exceptional circumstances.</b>
      * By default, the revocation check is turned on.
      *
-     * @return the builder instance for method chaining.
+     * @return the builder instance for method chaining
      */
-    public AuthTokenValidatorBuilder withoutUserCertificateRevocationCheckWithOcsp() {
-        configuration.setUserCertificateRevocationCheckWithOcspDisabled();
-        LOG.warn("User certificate revocation check with OCSP is disabled, " +
-            "you should turn off the revocation check only in exceptional circumstances");
-        return this;
+    public function withoutUserCertificateRevocationCheckWithOcsp()
+    {
+        $this->configuration->setUserCertificateRevocationCheckWithOcspDisabled();
+        $this->logger->warning('User certificate revocation check with OCSP is disabled, ' +
+            'you should turn off the revocation check only in exceptional circumstances');
+
+        return $this;
     }
 
     /**
@@ -98,12 +104,15 @@ public class AuthTokenValidatorBuilder {
      * This is an optional configuration parameter, the default is 5 seconds.
      *
      * @param ocspRequestTimeout the duration of OCSP request connection and response timeout
-     * @return the builder instance for method chaining.
+     *
+     * @return the builder instance for method chaining
      */
-    public AuthTokenValidatorBuilder withOcspRequestTimeout(Duration ocspRequestTimeout) {
-        configuration.setOcspRequestTimeout(ocspRequestTimeout);
-        LOG.debug("OCSP request timeout set to {}", ocspRequestTimeout);
-        return this;
+    public function withOcspRequestTimeout(int $ocspRequestTimeoutSeconds): AuthTokenValidatorBuilder
+    {
+        $this->configuration->setOcspRequestTimeout($ocspRequestTimeoutSeconds);
+        $this->logger->debug('OCSP request timeout set to '.$ocspRequestTimeoutSeconds.' seconds.');
+
+        return $this;
     }
 
     /**
@@ -111,12 +120,15 @@ public class AuthTokenValidatorBuilder {
      * The OCSP URL is extracted from the user certificate and some OCSP services don't support the nonce extension.
      *
      * @param urls OCSP URLs for which the nonce protocol extension will be disabled
+     *
      * @return the builder instance for method chaining
      */
-    public AuthTokenValidatorBuilder withNonceDisabledOcspUrls(URI... urls) {
-        Collections.addAll(configuration.getNonceDisabledOcspUrls(), urls);
-        LOG.debug("OCSP URLs for which the nonce protocol extension is disabled set to {}", configuration.getNonceDisabledOcspUrls());
-        return this;
+    public function withNonceDisabledOcspUrls(URI ...$urls): AuthTokenValidatorBuilder
+    {
+        array_push($this->configuration->getNonceDisabledOcspUrls(), ...array_unique($urls, SORT_REGULAR));
+        $this->logger->debug('OCSP URLs for which the nonce protocol extension is disabled set to '.json_encode($this->configuration->getNonceDisabledOcspUrls()));
+
+        return $this;
     }
 
     /**
@@ -126,26 +138,31 @@ public class AuthTokenValidatorBuilder {
      * the certificate's AIA extension if not.
      *
      * @param serviceConfiguration configuration of the designated OCSP service
+     *
      * @return the builder instance for method chaining
      */
-    public AuthTokenValidatorBuilder withDesignatedOcspServiceConfiguration(DesignatedOcspServiceConfiguration serviceConfiguration) {
-        configuration.setDesignatedOcspServiceConfiguration(serviceConfiguration);
-        LOG.debug("Using designated OCSP service configuration");
-        return this;
+    public function withDesignatedOcspServiceConfiguration(DesignatedOcspServiceConfiguration $serviceConfiguration): AuthTokenValidatorBuilder
+    {
+        $this->configuration->setDesignatedOcspServiceConfiguration($serviceConfiguration);
+        $this->logger->debug('Using designated OCSP service configuration');
+
+        return $this;
     }
 
     /**
      * Validates the configuration and builds the {@link AuthTokenValidator} object with it.
      * The returned {@link AuthTokenValidator} object is immutable/thread-safe.
      *
-     * @return the configured authentication token validator object
      * @throws NullPointerException     when required parameters are null
      * @throws IllegalArgumentException when any parameter is invalid
      * @throws RuntimeException         when JCE configuration is invalid
+     *
+     * @return the configured authentication token validator object
      */
-    public AuthTokenValidator build() throws NullPointerException, IllegalArgumentException, JceException {
-        configuration.validate();
-        return new AuthTokenValidatorImpl(configuration);
-    }
+    public function build(): AuthTokenValidator
+    {
+        $this->configuration->validate();
 
+        return new AuthTokenValidatorImpl($this->configuration);
+    }
 }

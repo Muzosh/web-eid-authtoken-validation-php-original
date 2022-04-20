@@ -13,11 +13,13 @@ class AiaOcspServiceConfiguration
     private $trustedCACertificateAnchors;
     private $trustedCACertificateCertStore;
 
-    public function __construct(array $nonceDisabledOcspUrls, TrustedAnchors $trustedCACertificateAnchors, CertStore $trustedCACertificateCertStore)
+    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+    public function __construct(array $nonceDisabledOcspUrls, TrustedAnchors $trustedCACertificateAnchors)// , CertStore $trustedCACertificateCertStore)
     {
         $this->nonceDisabledOcspUrls = $nonceDisabledOcspUrls;
         $this->trustedCACertificateAnchors = $trustedCACertificateAnchors;
-        $this->trustedCACertificateCertStore = $trustedCACertificateCertStore;
+        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+        // $this->trustedCACertificateCertStore = $trustedCACertificateCertStore;
     }
 
     public function getNonceDisabledOcspUrls(): array
@@ -30,8 +32,9 @@ class AiaOcspServiceConfiguration
         return $this->trustedCACertificateAnchors;
     }
 
-    public function getTrustedCACertificateCertStore(): CertStore
-    {
-        return $this->trustedCACertificateCertStore;
-    }
+    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+    // public function getTrustedCACertificateCertStore(): CertStore
+    // {
+    //     return $this->trustedCACertificateCertStore;
+    // }
 }

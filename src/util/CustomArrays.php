@@ -6,43 +6,12 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 
 use ArrayAccess;
 use ArrayIterator;
+use BadMethodCallException;
+use Countable;
+use GuzzleHttp\Psr7\Uri;
 use IteratorAggregate;
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateValidator;
 use phpseclib3\File\X509;
-
-// TODO: can be changed for define(currentClass::class . "CONST_NAME", EXPRESSION)
-// for nonmalluable variable
-final class TrustedAnchors
-{
-    private $certificates;
-
-    public function __construct(array $certificates)
-    {
-        $this->certificates = new X509Array(...$certificates);
-    }
-
-    public function getTrustedAnchors()
-    {
-        return $this->certificates;
-    }
-}
-
-// TODO: can be changed for define(currentClass::class . "CONST_NAME", EXPRESSION)
-// for nonmalluable variable
-final class CertStore
-{
-    private $certificates;
-
-    public function __construct(array $certificates)
-    {
-        $this->certificates = new X509UniqueArray(...$certificates);
-    }
-
-    public function getCertificates()
-    {
-        return $this->certificates;
-    }
-}
 
 /* TODO: what is the best way of ensuring typed array?
     // https://www.cloudsavvyit.com/10040/approaches-to-creating-typed-arrays-in-php/
@@ -52,9 +21,26 @@ final class CertStore
 
     in case i need more array functions https://gist.github.com/MightyPork/5ad28f208f046a24831c
     */
-abstract class CustomObjectArray implements ArrayAccess, IteratorAggregate
+abstract class CustomObjectArray implements Countable, ArrayAccess, IteratorAggregate
 {
     protected array $array;
+
+    abstract public function __construct();
+
+    // possbile to call array_ functions on this, but does not work with array_push
+    // public function __call($func, $argv)
+    // {
+    //     if (!is_callable($func) || 'array_' !== substr(strval($func), 0, 6)) {
+    //         throw new BadMethodCallException(__CLASS__.'->'.$func);
+    //     }
+
+    //     return call_user_func_array($func, array_merge(array($this->array), $argv));
+    // }
+
+    public function count(): int
+    {
+        return count($this->array);
+    }
 
     public function offsetExists($offset): bool
     {
@@ -92,6 +78,7 @@ abstract class CustomObjectArray implements ArrayAccess, IteratorAggregate
 
     protected function makeUnique(): void
     {
+        // SORT_REGULAR so it compares class attributes as arrays
         $this->array = array_unique($this->array, SORT_REGULAR);
     }
 }
@@ -113,9 +100,9 @@ final class SubjectCertificateValidatorArray extends CustomObjectArray
 
 class X509Array extends CustomObjectArray
 {
-    public function __construct(X509 ...$array)
+    public function __construct(X509 ...$certificates)
     {
-        $this->array = $array;
+        $this->array = $certificates;
     }
 
     public function checkInstance($value): void
@@ -125,11 +112,16 @@ class X509Array extends CustomObjectArray
         }
     }
 
-	public function getSubjectDNs(): array{
-		return array_map(function($item){
-			return $item->getSubjectDN(X509::DN_STRING);
-		}, $this->array);
-	}
+    public static function getSubjectDNs(?X509Array $x509array, X509 ...$certificates): array
+    {
+        $array = is_null($x509array) ? $certificates : $x509array;
+        $subjectDNs = array();
+        foreach ($array as $certificate) {
+            $subjectDNs[] = $certificate->getSubjectDN(X509::DN_STRING);
+        }
+
+        return $subjectDNs;
+    }
 }
 
 final class X509UniqueArray extends X509Array
@@ -140,6 +132,7 @@ final class X509UniqueArray extends X509Array
         $this->makeUnique();
     }
 
+    // override this so we can check for uniqueness
     public function offsetSet($offset, $value): void
     {
         $this->checkInstance($value);
@@ -149,6 +142,21 @@ final class X509UniqueArray extends X509Array
         }
 
         $this->array[$offset] = $value;
+    }
+}
+
+final class UriArray extends CustomObjectArray
+{
+    public function __construct(Uri ...$urls)
+    {
+        $this->array = $urls;
+    }
+
+    public function checkInstance($value): void
+    {
+        if (!$value instanceof Uri) {
+            throw new \TypeError('Can only insert '.Uri::class);
+        }
     }
 }
 
@@ -163,7 +171,7 @@ require __DIR__.'/../../vendor/autoload.php';
 $x509 = new X509();
 $seclib = $x509->loadX509($certificate);
 
-$certArray = [$x509, clone $x509, clone $x509];
+$certArray = array($x509, clone $x509, clone $x509);
 
 $ta = new X509Array(...$certArray);
 $taq = new X509UniqueArray(...$certArray);
@@ -174,7 +182,5 @@ $ta->pushItem(clone $x509);
 
 // title case
 // ucwords(strtolower($openssl['subject']['GN']), '\-');
-
-$ar = $ta->getSubjectDNs();
 
 $test = 10;

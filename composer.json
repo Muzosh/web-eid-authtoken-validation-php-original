@@ -16,10 +16,17 @@
             "role": "Developer"
         }
     ],
+		"repositories":[{
+			"type":"vcs",
+			"url":"https://github.com/Muzosh/ocsp"
+		}],
     "require": {
         "php": ">=7.4",
+        "firebase/php-jwt": "^6.1",
+        "guzzlehttp/guzzle": "^7.4",
         "monolog/monolog": "^2.4",
-        "phpseclib/phpseclib": "~3.0"
+        "phpseclib/phpseclib": "~3.0",
+				"muzosh/ocsp": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit" : ">=8.0"

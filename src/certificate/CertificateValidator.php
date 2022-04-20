@@ -8,6 +8,7 @@ use BadFunctionCallException;
 use DateTime;
 use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
 use muzosh\web_eid_authtoken_validation_php\util\CertStore;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
@@ -35,7 +36,7 @@ final class CertificateValidator
 
     public static function trustedCACertificatesAreValidOnDate(TrustedAnchors $trustedCACertificateAnchors, DateTime $date): void
     {
-        foreach ($trustedCACertificateAnchors->getTrustedAnchors() as $cert) {
+        foreach ($trustedCACertificateAnchors->getCertificates() as $cert) {
             if (!$cert instanceof X509) {
                 throw new InvalidArgumentException('Invalid trustedCACertificateAnchor format.');
             }
@@ -46,12 +47,20 @@ final class CertificateValidator
 
     public static function validateIsSignedByTrustedCA(
         X509 $certificate,
-        TrustedAnchors $trustedCACertificateAnchors,
-        CertStore $trustedCACertificateCertStore,
-        DateTime $date
+        TrustedAnchors $trustedCACertificateAnchors
+        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+        // CertStore $trustedCACertificateCertStore
+        // DateTime $date - cannot be used in X509 object? maybe setStartDate and setEndDate functions?
     ): X509 {
-        // TODO: what this method does in java?
-        return new X509();
+        foreach ($trustedCACertificateAnchors->getCertificates() as $trustedCertificate) {
+            $certificate->loadCA($trustedCertificate->saveX509($trustedCertificate->getCurrentCert(), X509::FORMAT_PEM));
+        }
+
+        if ($certificate->validateSignature()) {
+            return end(array_values($certificate->getChain()));
+        }
+
+        throw new CertificateNotTrustedException($certificate);
     }
 
     public static function buildTrustAnchorsFromCertificates(array $certificates): TrustedAnchors
@@ -59,8 +68,10 @@ final class CertificateValidator
         return new TrustedAnchors($certificates);
     }
 
-    public static function buildCertStoreFromCertificates(array $certificates): CertStore
-    {
-        return new CertStore($certificates);
-    }
+    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+    // public static function buildCertStoreFromCertificates(array $certificates): CertStore
+    // {
+    // 	// TODO: how to ensure that treat safety Java comment is talking about?
+    //     return new CertStore($certificates, null);
+    // }
 }

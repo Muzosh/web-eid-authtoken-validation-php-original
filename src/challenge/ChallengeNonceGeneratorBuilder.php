@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\challenge;
 
-use DateInterval;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
 use UnexpectedValueException;
 
@@ -13,13 +12,13 @@ use UnexpectedValueException;
  */
 class ChallengeNonceGeneratorBuilder
 {
-    private $challengeNonceStore;
-    private $ttl;
+    private ChallengeNonceStore $challengeNonceStore;
     private $secureRandom;
+    private int $ttlSeconds;
 
     public function __construct()
     {
-        $this->ttl = new DateInterval('PT5M');
+        $this->ttlSeconds = 300; // 5 minutes
 
         $this->secureRandom = function ($nonce_length) {
             return unpack('c*', random_bytes($nonce_length));
@@ -34,9 +33,9 @@ class ChallengeNonceGeneratorBuilder
      *
      * @return current builder instance
      */
-    public function withNonceTtl(DateInterval $duration): ChallengeNonceGeneratorBuilder
+    public function withNonceTtl(int $seconds): ChallengeNonceGeneratorBuilder
     {
-        $this->ttl = $duration;
+        $this->ttlSeconds = $seconds;
 
         return $this;
     }
@@ -78,7 +77,7 @@ class ChallengeNonceGeneratorBuilder
     {
         $this->validateParameters();
 
-        return new ChallengeNonceGeneratorImpl($this->challengeNonceStore, $this->secureRandom, $this->ttl);
+        return new ChallengeNonceGeneratorImpl($this->challengeNonceStore, $this->secureRandom, $this->ttlSeconds);
     }
 
     private function validateParameters(): void
@@ -89,6 +88,6 @@ class ChallengeNonceGeneratorBuilder
         if (is_null($this->secureRandom)) {
             throw new UnexpectedValueException('Secure random generator must not be null');
         }
-        DateAndTime::requirePositiveDuration($this->ttl, 'Nonce TTL');
+        DateAndTime::requirePositiveDuration($this->ttlSeconds, 'Nonce TTL');
     }
 }

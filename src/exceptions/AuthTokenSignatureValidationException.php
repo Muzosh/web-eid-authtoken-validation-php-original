@@ -9,8 +9,8 @@ namespace muzosh\web_eid_authtoken_validation_php\exceptions;
  */
 class AuthTokenSignatureValidationException extends AuthTokenException
 {
-	public function __construct()
-	{
-		parent::__construct("Token signature validation has failed. Check that the origin and nonce are correct.");
-	}
+    public function __construct()
+    {
+        parent::__construct('Token signature validation has failed. Check that the origin and nonce are correct.');
+    }
 }

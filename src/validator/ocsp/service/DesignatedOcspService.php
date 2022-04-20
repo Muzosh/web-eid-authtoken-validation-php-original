@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp\service;
 
 use DateTime;
+use GuzzleHttp\Psr7\Uri;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use phpseclib3\File\X509;
@@ -26,7 +27,7 @@ class DesignatedOcspService implements OcspService
         return $this->configuration->doesSupportNonce();
     }
 
-    public function getAccessLocation(): array
+    public function getAccessLocation(): Uri
     {
         return $this->configuration->getOcspServiceAccessLocation();
     }

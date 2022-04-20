@@ -12,7 +12,7 @@ use Throwable;
  */
 class CertificateNotTrustedException extends AuthTokenException
 {
-    public function __construct(X509 $certificate, Throwable $cause)
+    public function __construct(X509 $certificate, Throwable $cause = null)
     {
         parent::__construct('Certificate ' + $certificate->getSubjectDN(X509::DN_STRING) + ' is not trusted', $cause);
     }

@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp\service;
 
 use DateTime;
+use GuzzleHttp\Psr7\Uri;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
+use muzosh\web_eid_authtoken_validation_php\util\CertStore;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspResponseValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspUrl;
 use phpseclib3\File\X509;
@@ -16,15 +19,17 @@ use phpseclib3\File\X509;
  */
 class AiaOcspService implements OcspService
 {
-    private $trustedCACertificateAnchors;
-    private $trustedCACertificateCertStore;
-    private $url;
-    private $supportsNonce;
+    private TrustedAnchors $trustedCACertificateAnchors;
+    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+    // private CertStore $trustedCACertificateCertStore;
+    private Uri $url;
+    private bool $supportsNonce;
 
     public function __construct(AiaOcspServiceConfiguration $configuration, X509 $certificate)
     {
         $this->trustedCACertificateAnchors = $configuration->getTrustedCACertificateAnchors();
-        $this->trustedCACertificateCertStore = $configuration->getTrustedCACertificateCertStore();
+        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+        // $this->trustedCACertificateCertStore = $configuration->getTrustedCACertificateCertStore();
         $this->url = AiaOcspService::getOcspAiaUrlFromCertificate($certificate);
         $this->supportsNonce = !in_array($this->url, $configuration->getNonceDisabledOcspUrls());
     }
@@ -34,7 +39,7 @@ class AiaOcspService implements OcspService
         return $this->supportsNonce;
     }
 
-    public function getAccessLocation(): array
+    public function getAccessLocation(): Uri
     {
         return $this->url;
     }
@@ -44,13 +49,13 @@ class AiaOcspService implements OcspService
         CertificateValidator::certificateIsValidOnDate($cert, $producedAt, 'AIA OCSP responder');
         // Trusted certificates' validity has been already verified in validateCertificateExpiry().
         OcspResponseValidator::validateHasSigningExtension($cert);
-        CertificateValidator::validateIsSignedByTrustedCA($cert, $this->trustedCACertificateAnchors, $this->trustedCACertificateCertStore, $this->producedAt);
+        CertificateValidator::validateIsSignedByTrustedCA($cert, $this->trustedCACertificateAnchors); // , $this->trustedCACertificateCertStore, $this->producedAt);
     }
 
-    private static function getOcspAiaUrlFromCertificate(X509 $certificate): array
+    private static function getOcspAiaUrlFromCertificate(X509 $certificate): Uri
     {
         $uri = OcspUrl::getOcspUri($certificate);
-        if ($uri == null || $uri === false) {
+        if (null == $uri || false === $uri) {
             throw new UserCertificateOCSPCheckFailedException('Getting the AIA OCSP responder field from the certificate failed');
         }
 

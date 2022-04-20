@@ -15,7 +15,7 @@ final class Base64Util
 
     public static function decodeBase64(string $base64Str): array
     {
-        return unpack('c*', base64_decode($base64Str));
+        return array_values(unpack('c*', base64_decode($base64Str)));
     }
 
     public static function encodeBase64(array $bytes): string

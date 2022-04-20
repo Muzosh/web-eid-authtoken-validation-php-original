@@ -9,12 +9,12 @@ namespace muzosh\web_eid_authtoken_validation_php\exceptions;
  */
 class UserCertificateRevokedException extends AuthTokenException
 {
-	public function __construct(string $message = null)
-	{
-		if (is_null($message)) {
-			parent::__construct("User certificate has been revoked");
-		} else {
-			parent::__construct("User certificate has been revoked: " . $message);
-		}
-	}
+    public function __construct(string $message = null)
+    {
+        if (is_null($message)) {
+            parent::__construct('User certificate has been revoked');
+        } else {
+            parent::__construct('User certificate has been revoked: '.$message);
+        }
+    }
 }

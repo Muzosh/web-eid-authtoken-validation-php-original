@@ -10,7 +10,7 @@ use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use phpseclib3\File\X509;
 
-final class SubjectCertificateExpiryValidator
+final class SubjectCertificateExpiryValidator implements SubjectCertificateValidator
 {
     private $logger;
     private $trustedCACertificateAnchors;
@@ -27,7 +27,7 @@ final class SubjectCertificateExpiryValidator
      *
      * @param subjectCertificate user certificate to be validated
      */
-    public function validateCertificateExpiry(X509 $subjectCertificate): void
+    public function validate(X509 $subjectCertificate): void
     {
         // Use the clock instance so that the date can be mocked in tests.
         $now = DefaultClock::getInstance()->now();

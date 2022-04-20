@@ -9,8 +9,8 @@ namespace muzosh\web_eid_authtoken_validation_php\exceptions;
  */
 class UserCertificateDisallowedPolicyException extends AuthTokenException
 {
-	public function __construct()
-	{
-		parent::__construct("Disallowed user certificate policy");
-	}
+    public function __construct()
+    {
+        parent::__construct('Disallowed user certificate policy');
+    }
 }

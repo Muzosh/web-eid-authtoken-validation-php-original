@@ -9,8 +9,8 @@ namespace muzosh\web_eid_authtoken_validation_php\exceptions;
  */
 class ChallengeNonceExpiredException extends AuthTokenException
 {
-	public function __construct()
-	{
-		parent::__construct("Challenge nonce has expired");
-	}
+    public function __construct()
+    {
+        parent::__construct('Challenge nonce has expired');
+    }
 }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
-final class SubjectCertificateNotRevokedValidator {
+use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
+
+final class SubjectCertificateNotRevokedValidator implements SubjectCertificateValidator{
 	private static $logger;
     //private static final DigestCalculator DIGEST_CALCULATOR = Digester.sha1();
 
@@ -12,16 +14,13 @@ final class SubjectCertificateNotRevokedValidator {
     private $ocspClient;
     private $ocspServiceProvider;
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
-    }
-
-    public SubjectCertificateNotRevokedValidator(SubjectCertificateTrustedValidator trustValidator,
-                                                 OcspClient ocspClient,
-                                                 OcspServiceProvider ocspServiceProvider) {
-        this.trustValidator = trustValidator;
-        this.ocspClient = ocspClient;
-        this.ocspServiceProvider = ocspServiceProvider;
+    public function __construct(SubjectCertificateTrustedValidator $trustValidator,
+									OcspClient $ocspClient,
+                                                 OcspServiceProvider $ocspServiceProvider) {
+		$this->logger = WebEidLogger::getLogger(SubjectCertificateNotRevokedValidator::class);
+        $this->trustValidator = $trustValidator;
+        $this->ocspClient = $ocspClient;
+        $this->ocspServiceProvider = $ocspServiceProvider;
     }
 
     /**
@@ -30,39 +29,34 @@ final class SubjectCertificateNotRevokedValidator {
      * @param subjectCertificate user certificate to be validated
      * @throws AuthTokenException when user certificate is revoked or revocation check fails.
      */
-    public void validateCertificateNotRevoked(X509Certificate subjectCertificate) throws AuthTokenException {
-        try {
-            OcspService ocspService = ocspServiceProvider.getService(subjectCertificate);
+    public function validate(X509 $subjectCertificate): void {
+        $ocspService = $this->ocspServiceProvider->getService($subjectCertificate);
 
-            if (!ocspService.doesSupportNonce()) {
-                LOG.debug("Disabling OCSP nonce extension");
-            }
+		if (!$ocspService->doesSupportNonce()) {
+			$this->logger->debug("Disabling OCSP nonce extension");
+		}
 
-            final CertificateID certificateId = getCertificateId(subjectCertificate,
-                Objects.requireNonNull(trustValidator.getSubjectCertificateIssuerCertificate()));
+		$certificateId = getCertificateId($subjectCertificate, $trustValidator->getSubjectCertificateIssuerCertificate());
 
-            final OCSPReq request = new OcspRequestBuilder()
-                .withCertificateId(certificateId)
-                .enableOcspNonce(ocspService.doesSupportNonce())
-                .build();
+		$request = new OcspRequestBuilder()
+			.withCertificateId(certificateId)
+			.enableOcspNonce($ocspService->doesSupportNonce())
+			.build();
 
-            LOG.debug("Sending OCSP request");
-            final OCSPResp response = Objects.requireNonNull(ocspClient.request(ocspService.getAccessLocation(), request));
-            if (response.getStatus() != OCSPResponseStatus.SUCCESSFUL) {
-                throw new UserCertificateOCSPCheckFailedException("Response status: " + ocspStatusToString(response.getStatus()));
-            }
+		$this->logger->debug("Sending OCSP request");
+		$response = $ocspClient.request(ocspService.getAccessLocation(), request);
+		if (response.getStatus() != OCSPResponseStatus.SUCCESSFUL) {
+			throw new UserCertificateOCSPCheckFailedException("Response status: " + ocspStatusToString(response.getStatus()));
+		}
 
-            final BasicOCSPResp basicResponse = (BasicOCSPResp) response.getResponseObject();
-            verifyOcspResponse(basicResponse, ocspService, certificateId);
-            if (ocspService.doesSupportNonce()) {
-                checkNonce(request, basicResponse);
-            }
-        } catch (OCSPException | CertificateException | OperatorCreationException | IOException e) {
-            throw new UserCertificateOCSPCheckFailedException(e);
-        }
+		$basicResponse = (BasicOCSPResp) response.getResponseObject();
+		verifyOcspResponse(basicResponse, ocspService, certificateId);
+		if (ocspService.doesSupportNonce()) {
+			checkNonce(request, basicResponse);
+		}
     }
 
-    private void verifyOcspResponse(BasicOCSPResp basicResponse, OcspService ocspService, CertificateID requestCertificateId) throws AuthTokenException, OCSPException, CertificateException, OperatorCreationException {
+    private function verifyOcspResponse(BasicOCSPResp $basicResponse, OcspService $ocspService, CertificateID $requestCertificateId) : void {
         // The verification algorithm follows RFC 2560, https://www.ietf.org/rfc/rfc2560.txt.
         //
         // 3.2.  Signed Response Acceptance Requirements
@@ -117,7 +111,7 @@ final class SubjectCertificateNotRevokedValidator {
         LOG.debug("OCSP check result is GOOD");
     }
 
-    private static void checkNonce(OCSPReq request, BasicOCSPResp response) throws UserCertificateOCSPCheckFailedException {
+    private static function checkNonce(OCSPReq $request, BasicOCSPResp $response): void {
         final Extension requestNonce = request.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
         final Extension responseNonce = response.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
         if (!requestNonce.equals(responseNonce)) {
@@ -126,14 +120,14 @@ final class SubjectCertificateNotRevokedValidator {
         }
     }
 
-    private static CertificateID getCertificateId(X509Certificate subjectCertificate, X509Certificate issuerCertificate) throws CertificateEncodingException, IOException, OCSPException {
+    private static function getCertificateId(X509 $subjectCertificate, X509 $issuerCertificate) : CertificateID {
         final BigInteger serial = subjectCertificate.getSerialNumber();
         return new CertificateID(DIGEST_CALCULATOR,
             new X509CertificateHolder(issuerCertificate.getEncoded()), serial);
     }
 
-    private static String ocspStatusToString(int status) {
-        switch (status) {
+    private static function ocspStatusToString(int $status): string{
+        switch ($status) {
             case OCSPResp.MALFORMED_REQUEST:
                 return "malformed request";
             case OCSPResp.INTERNAL_ERROR:

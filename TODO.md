@@ -1,5 +1,7 @@
 
 * add licences at the start of each file
+* go through class variables and specify their type
+* catch and handle all missing exceptions from java and cs library
 * typehint everything
 * messages of Exception are not binary safe, maybe add some handling?
 * phpseclib vs openssl

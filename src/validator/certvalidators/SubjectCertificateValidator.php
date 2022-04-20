@@ -11,6 +11,7 @@ use phpseclib3\File\X509;
  * <p>
  * They are used by AuthTokenValidatorImpl and are not part of the public API.
  */
-interface SubjectCertificateValidator {
-    function validate(X509 $subjectCertificate): void;
+interface SubjectCertificateValidator
+{
+    public function validate(X509 $subjectCertificate): void;
 }

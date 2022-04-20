@@ -8,27 +8,30 @@ use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNonceExpiredExce
 use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNonceNotFoundException;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
 
-interface ChallengeNonceStoreInterface {
-
-    public function put(ChallengeNonce $challengeNonce) : void;
+interface ChallengeNonceStoreInterface
+{
+    public function put(ChallengeNonce $challengeNonce): void;
 
     public function getAndRemoveImpl(): ChallengeNonce;
 
-	public function getAndRemove() : ChallengeNonce;
+    public function getAndRemove(): ChallengeNonce;
 }
+
 /**
  * A store for storing generated challenge nonces and accessing their generation time.
  */
-abstract class ChallengeNonceStore implements ChallengeNonceStoreInterface {
-    public function getAndRemove() : ChallengeNonce{
+abstract class ChallengeNonceStore implements ChallengeNonceStoreInterface
+{
+    public function getAndRemove(): ChallengeNonce
+    {
         $challengeNonce = $this->getAndRemoveImpl();
-        if ($challengeNonce == null) {
+        if (null == $challengeNonce) {
             throw new ChallengeNonceNotFoundException();
         }
         if (DateAndTime::utcNow() > $challengeNonce->getExpirationTime()) {
             throw new ChallengeNonceExpiredException();
         }
+
         return $challengeNonce;
     }
 }
-

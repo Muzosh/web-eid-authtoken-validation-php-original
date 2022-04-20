@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\certificate;
 
 use BadFunctionCallException;
-use Throwable;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateDecodingException;
 use muzosh\web_eid_authtoken_validation_php\util\Base64Util;
 use phpseclib3\File\X509;
+use Throwable;
 
 final class CertificateLoader
 {
@@ -20,28 +20,29 @@ final class CertificateLoader
         throw new BadFunctionCallException('Utility class');
     }
 
-    public static function loadCertificatesFromResources(string ...$resourceNames): iterable
+    public static function loadCertificatesFromResources(string ...$resourceNames): array
     {
-        $caCertificates = [];
+        $caCertificates = array();
         foreach ($resourceNames as $resourceName) {
             $x509 = new X509();
-            $cert = $x509->loadX509(file_get_contents(CertificateLoader::CERTPATH.$resourceName));
-            if ($cert) {
-                array_push($caCertificates, $cert);
+            $result = $x509->loadX509(file_get_contents(CertificateLoader::CERTPATH.$resourceName));
+            if ($result) {
+                array_push($caCertificates, $x509);
             }
         }
 
         return $caCertificates;
     }
 
-    public static function decodeCertificateFromBase64(string $certificateInBase64): X509
-    {
-        // Objects.requireNonNull(certificateInBase64, "certificateInBase64");
-        // TODO: dont catch general exceptions?
-        try {
-            return new X509(Base64Util::decodeBase64($certificateInBase64));
-        } catch (Throwable $e) {
-            throw new CertificateDecodingException($e);
-        }
-    }
+    // probably will not be needed since X509 can load bas64 encoded certificate
+    // public static function decodeCertificateFromBase64(string $certificateInBase64): X509
+    // {
+    //     // Objects.requireNonNull(certificateInBase64, "certificateInBase64");
+    //     // TODO: dont catch general exceptions?
+    //     try {
+    //         return new X509(Base64Util::decodeBase64($certificateInBase64));
+    //     } catch (Throwable $e) {
+    //         throw new CertificateDecodingException($e);
+    //     }
+    // }
 }
