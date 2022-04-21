@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace muzosh\web_eid_authtoken_validation_php\util\asn1\maps;
+namespace muzosh\web_eid_authtoken_validation_php\util\ocsp\maps;
 
 use phpseclib3\File\ASN1;
 

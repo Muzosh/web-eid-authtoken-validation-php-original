@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace muzosh\web_eid_authtoken_validation_php\util\asn1\maps;
+namespace muzosh\web_eid_authtoken_validation_php\util\ocsp\maps;
 
 use phpseclib3\File\ASN1;
 use phpseclib3\File\ASN1\Maps\Name;
@@ -14,9 +14,7 @@ abstract class OcspResponderId
         'children' => array(
             'byName' => array(
                 'constant' => 1,
-                'explicit' => true,
-                'type' => Name::MAP,
-            ),
+                'explicit' => true, ) + Name::MAP,
             'byKey' => array(
                 'constant' => 2,
                 'explicit' => true,

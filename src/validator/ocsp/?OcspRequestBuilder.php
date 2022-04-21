@@ -10,6 +10,14 @@ final class OcspRequestBuilder
 
     private bool $ocspNonceEnabled = true;
     private string $encodedCertificateId;
+    private string $nonce;
+
+    public function __construct()
+    {
+        $this->secureRandom = function ($nonce_length): array {
+            return unpack('c*', random_bytes($nonce_length));
+        };
+    }
 
     public function withCertificateId(string $certificateId): OcspRequestBuilder
     {
@@ -31,12 +39,10 @@ final class OcspRequestBuilder
      */
     public function build()
     {
-        $secureRandom = function ($nonce_length) {
-            return unpack('c*', random_bytes($nonce_length));
-        };
     }
 
     private function addNonce(): void
     {
+        $this->nonceBytes = call_user_func($this->secureRandom, 8);
     }
 }

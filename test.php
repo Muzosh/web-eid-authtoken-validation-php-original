@@ -4,33 +4,27 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\certificate;
 
-include './src/util/Logger.php';
-
-include './src/util/HelperClasses.php';
-
-include './src/util/CustomArrays.php';
 use DateInterval;
 use DateTime;
 use DateTimeZone;
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Psr7\Uri;
-use GuzzleHttp\RequestOptions;
-use InvalidArgumentException;
-use muzosh\web_eid_authtoken_validation_php\util\ASN1Util;
 use muzosh\web_eid_authtoken_validation_php\util\Base64Util;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
-use muzosh\web_eid_authtoken_validation_php\util\UriArray;
-use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
-use phpseclib3\Crypt\EC\PublicKey;
+use muzosh\web_eid_authtoken_validation_php\util\ocsp\ASN1Util;
 use phpseclib3\File\ASN1;
 use phpseclib3\File\X509;
+
+include './src/util/Logger.php';
+
+foreach (glob('src/util/OCSP/Maps/*.php') as $filename) {
+    include $filename;
+}
+
+include './src/util/CustomArrayUtil.php';
 
 require __DIR__.'/vendor/autoload.php';
 
 // $placeholder = new PublicKey();
 
-$certificate = "-----BEGIN CERTIFICATE-----\nMIIEBDCCA2WgAwIBAgIQH9NeN14jo0ReaircrN2YvDAKBggqhkjOPQQDBDBgMQswCQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRhDA5OVFJFRS0xMDc0NzAxMzEbMBkGA1UEAwwSVEVTVCBvZiBFU1RFSUQyMDE4MB4XDTIwMDMxMjEyMjgxMloXDTI1MDMxMjIxNTk1OVowfzELMAkGA1UEBhMCRUUxKjAoBgNVBAMMIUrDlUVPUkcsSkFBSy1LUklTVEpBTiwzODAwMTA4NTcxODEQMA4GA1UEBAwHSsOVRU9SRzEWMBQGA1UEKgwNSkFBSy1LUklTVEpBTjEaMBgGA1UEBRMRUE5PRUUtMzgwMDEwODU3MTgwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAARVeP+9l3b1mm3fMHPeCFLbD7esXI8lDc+soWCBoMnZGo3d2Rg/mzKCIWJtw+JhcN7RwFFH9cwZ8Gni4C3QFYBIIJ2GdjX2KQfEkDvRsnKw6ZZmJQ+HC4ZFew3r8gauhfejggHDMIIBvzAJBgNVHRMEAjAAMA4GA1UdDwEB/wQEAwIDiDBHBgNVHSAEQDA+MDIGCysGAQQBg5EhAQIBMCMwIQYIKwYBBQUHAgEWFWh0dHBzOi8vd3d3LnNrLmVlL0NQUzAIBgYEAI96AQIwHwYDVR0RBBgwFoEUMzgwMDEwODU3MThAZWVzdGkuZWUwHQYDVR0OBBYEFOfk7lPOq6rb9IbFZF1q97kJ4s2iMGEGCCsGAQUFBwEDBFUwUzBRBgYEAI5GAQUwRzBFFj9odHRwczovL3NrLmVlL2VuL3JlcG9zaXRvcnkvY29uZGl0aW9ucy1mb3ItdXNlLW9mLWNlcnRpZmljYXRlcy8TAkVOMCAGA1UdJQEB/wQWMBQGCCsGAQUFBwMCBggrBgEFBQcDBDAfBgNVHSMEGDAWgBTAhJkpxE6fOwI09pnhClYACCk+ezBzBggrBgEFBQcBAQRnMGUwLAYIKwYBBQUHMAGGIGh0dHA6Ly9haWEuZGVtby5zay5lZS9lc3RlaWQyMDE4MDUGCCsGAQUFBzAChilodHRwOi8vYy5zay5lZS9UZXN0X29mX0VTVEVJRDIwMTguZGVyLmNydDAKBggqhkjOPQQDBAOBjAAwgYgCQgEQRbzFOSHIcmIEKczhN8xuteYgN2zEXZSJdP0q1iH1RR2AzZ8Ddz6SKRn/bZSzjcd4b7h3AyOEQr2hcidYkxT7sAJCAMPtOUryqp2WbTEUoOpbWrKqp8GjaAiVpBGDn/Xdu5M2Z6dvwZHnFGgRrZXtyUbcAgRW7MQJ0s/9GCVro3iqUzNN\n-----END CERTIFICATE-----";
+$certificate = 'MIIEAzCCA2WgAwIBAgIQOWkBWXNDJm1byFd3XsWkvjAKBggqhkjOPQQDBDBgMQswCQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRhDA5OVFJFRS0xMDc0NzAxMzEbMBkGA1UEAwwSVEVTVCBvZiBFU1RFSUQyMDE4MB4XDTE4MTAxODA5NTA0N1oXDTIzMTAxNzIxNTk1OVowfzELMAkGA1UEBhMCRUUxKjAoBgNVBAMMIUrDlUVPUkcsSkFBSy1LUklTVEpBTiwzODAwMTA4NTcxODEQMA4GA1UEBAwHSsOVRU9SRzEWMBQGA1UEKgwNSkFBSy1LUklTVEpBTjEaMBgGA1UEBRMRUE5PRUUtMzgwMDEwODU3MTgwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAR5k1lXzvSeI9O/1s1pZvjhEW8nItJoG0EBFxmLEY6S7ki1vF2Q3TEDx6dNztI1Xtx96cs8r4zYTwdiQoDg7k3diUuR9nTWGxQEMO1FDo4Y9fAmiPGWT++GuOVoZQY3XxijggHDMIIBvzAJBgNVHRMEAjAAMA4GA1UdDwEB/wQEAwIDiDBHBgNVHSAEQDA+MDIGCysGAQQBg5EhAQIBMCMwIQYIKwYBBQUHAgEWFWh0dHBzOi8vd3d3LnNrLmVlL0NQUzAIBgYEAI96AQIwHwYDVR0RBBgwFoEUMzgwMDEwODU3MThAZWVzdGkuZWUwHQYDVR0OBBYEFOQsvTQJEBVMMSmhyZX5bibYJubAMGEGCCsGAQUFBwEDBFUwUzBRBgYEAI5GAQUwRzBFFj9odHRwczovL3NrLmVlL2VuL3JlcG9zaXRvcnkvY29uZGl0aW9ucy1mb3ItdXNlLW9mLWNlcnRpZmljYXRlcy8TAkVOMCAGA1UdJQEB/wQWMBQGCCsGAQUFBwMCBggrBgEFBQcDBDAfBgNVHSMEGDAWgBTAhJkpxE6fOwI09pnhClYACCk+ezBzBggrBgEFBQcBAQRnMGUwLAYIKwYBBQUHMAGGIGh0dHA6Ly9haWEuZGVtby5zay5lZS9lc3RlaWQyMDE4MDUGCCsGAQUFBzAChilodHRwOi8vYy5zay5lZS9UZXN0X29mX0VTVEVJRDIwMTguZGVyLmNydDAKBggqhkjOPQQDBAOBiwAwgYcCQgH1UsmMdtLZti51Fq2QR4wUkAwpsnhsBV2HQqUXFYBJ7EXnLCkaXjdZKkHpABfM0QEx7UUhaI4i53jiJ7E1Y7WOAAJBDX4z61pniHJapI1bkMIiJQ/ti7ha8fdJSMSpAds5CyHIyHkQzWlVy86f9mA7Eu3oRO/1q+eFUzDbNN3Vvy7gQWQ=';
 
 $tokenOrigin = 'https://ria.ee';
 $tokenNonce = '12345678123456781234567812345678912356789123';
@@ -55,8 +49,38 @@ $x509->saveX509($x509->getCurrentCert(), X509::FORMAT_DER);
 // $x501->loadX509(file_get_contents('./certs/ESTEID2018.cer'));
 $x502 = new X509();
 $x502->loadX509(file_get_contents('./certs/TEST_of_ESTEID2018.cer'));
-ASN1::loadOIDs(array('organizationName' => '2.5.4.97'));
-$test = $x502->getSubjectDN(X509::DN_STRING);
+
+$request = array(48, 106, 48, 104, 48, 75, 48, 73, 48, 71, 48, 7, 6, 5, 43, 14, 3, 2, 26, 4, 20, 50, -105, 66, -110, -100, 102, -11, 87, 11, -49, -45, 36, -114, 84, -120, -42, -47, -82, -85, -85, 4, 20, -64, -124, -103, 41, -60, 78, -97, 59, 2, 52, -10, -103, -31, 10, 86, 0, 8, 41, 62, 123, 2, 16, 57, 105, 1, 89, 115, 67, 38, 109, 91, -56, 87, 119, 94, -59, -92, -66, -94, 25, 48, 23, 48, 21, 6, 9, 43, 6, 1, 5, 5, 7, 48, 1, 2, 4, 8, -23, 15, 15, 3, 42, 2, 8, -18);
+
+$response = array(48, -126, 6, 39, 10, 1, 0, -96, -126, 6, 32, 48, -126, 6, 28, 6, 9, 43, 6, 1, 5, 5, 7, 48, 1, 1, 4, -126, 6, 13, 48, -126, 6, 9, 48, -126, 1, 40, -95, 116, 48, 114, 49, 55, 48, 53, 6, 3, 85, 4, 3, 12, 46, 68, 69, 77, 79, 32, 111, 102, 32, 69, 83, 84, 69, 73, 68, 45, 83, 75, 32, 50, 48, 49, 56, 32, 65, 73, 65, 32, 79, 67, 83, 80, 32, 82, 69, 83, 80, 79, 78, 68, 69, 82, 32, 50, 48, 49, 56, 49, 13, 48, 11, 6, 3, 85, 4, 11, 12, 4, 79, 67, 83, 80, 49, 27, 48, 25, 6, 3, 85, 4, 10, 12, 18, 83, 75, 32, 73, 68, 32, 83, 111, 108, 117, 116, 105, 111, 110, 115, 32, 65, 83, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 69, 69, 24, 15, 50, 48, 50, 50, 48, 52, 50, 48, 50, 48, 53, 52, 52, 52, 90, 48, -127, -125, 48, -127, -128, 48, 71, 48, 7, 6, 5, 43, 14, 3, 2, 26, 4, 20, 50, -105, 66, -110, -100, 102, -11, 87, 11, -49, -45, 36, -114, 84, -120, -42, -47, -82, -85, -85, 4, 20, -64, -124, -103, 41, -60, 78, -97, 59, 2, 52, -10, -103, -31, 10, 86, 0, 8, 41, 62, 123, 2, 16, 57, 105, 1, 89, 115, 67, 38, 109, 91, -56, 87, 119, 94, -59, -92, -66, -128, 0, 24, 15, 50, 48, 50, 50, 48, 52, 50, 48, 50, 48, 53, 52, 52, 52, 90, -95, 34, 48, 32, 48, 30, 6, 9, 43, 6, 1, 5, 5, 7, 48, 1, 6, 4, 17, 24, 15, 50, 48, 49, 56, 48, 52, 48, 53, 48, 57, 52, 53, 50, 49, 90, -95, 25, 48, 23, 48, 21, 6, 9, 43, 6, 1, 5, 5, 7, 48, 1, 2, 4, 8, 124, -53, -83, 56, -127, -118, -7, -55, 48, 13, 6, 9, 42, -122, 72, -122, -9, 13, 1, 1, 11, 5, 0, 3, -126, 1, 1, 0, 78, -124, -14, 59, 28, -41, 45, 104, 74, 91, 5, 35, 43, 68, -102, 60, -60, 94, 112, -79, -123, 22, 63, -25, -63, 81, -113, -32, -78, 121, 0, -24, -76, -46, 122, -75, -120, -89, 31, -96, 126, 4, 65, 50, -88, -44, -37, 41, -33, 110, -72, -17, -86, 94, -110, -10, -82, -115, 3, -124, 73, -87, -110, -25, 24, 44, -40, 35, 35, -85, -78, -48, 25, -60, 43, 70, 34, 101, 64, -107, -29, -48, -73, -27, -53, 85, -11, 69, 38, 8, -101, 105, -13, -67, 90, -37, 16, 2, -107, 11, -3, 103, 47, -85, -116, 66, 37, 21, 124, -95, 18, -67, -69, -81, 64, -93, 67, 38, 57, -26, -91, -38, -79, 20, 21, -15, 82, 10, 1, -109, 121, -44, -50, 40, 102, 86, 43, 91, 62, 86, -89, 20, -64, -71, 68, 56, 120, -53, -90, -101, 83, -62, -58, -103, 23, 104, -58, 57, -33, -88, -87, -31, -119, 9, -110, 8, 76, 100, 18, 29, 27, 60, -36, 65, -115, -44, -120, 54, 64, -26, 71, 39, 16, 117, 2, 119, 21, 94, 33, -102, -54, 116, 29, 25, 1, 15, 37, 115, 62, 115, 1, 59, -76, -63, -26, -53, -92, -58, -124, 120, 6, -88, -113, -71, -32, 4, 47, 125, -75, 82, -39, -88, -10, 26, 56, -118, 28, 127, -44, -87, 17, 37, -64, 102, -88, -26, -76, 7, 13, -32, -61, -33, 86, 87, -95, 123, 27, -6, -60, 37, -107, -126, 19, -106, 38, 57, -96, -126, 3, -59, 48, -126, 3, -63, 48, -126, 3, -67, 48, -126, 3, 31, -96, 3, 2, 1, 2, 2, 16, 122, -19, -123, 24, -104, -101, -32, -100, 91, -31, -69, -100, 16, 25, 50, 112, 48, 10, 6, 8, 42, -122, 72, -50, 61, 4, 3, 4, 48, 96, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 69, 69, 49, 27, 48, 25, 6, 3, 85, 4, 10, 12, 18, 83, 75, 32, 73, 68, 32, 83, 111, 108, 117, 116, 105, 111, 110, 115, 32, 65, 83, 49, 23, 48, 21, 6, 3, 85, 4, 97, 12, 14, 78, 84, 82, 69, 69, 45, 49, 48, 55, 52, 55, 48, 49, 51, 49, 27, 48, 25, 6, 3, 85, 4, 3, 12, 18, 84, 69, 83, 84, 32, 111, 102, 32, 69, 83, 84, 69, 73, 68, 50, 48, 49, 56, 48, 30, 23, 13, 49, 56, 49, 48, 51, 49, 50, 49, 48, 48, 48, 48, 90, 23, 13, 51, 51, 48, 56, 50, 57, 50, 49, 48, 48, 48, 48, 90, 48, 114, 49, 55, 48, 53, 6, 3, 85, 4, 3, 12, 46, 68, 69, 77, 79, 32, 111, 102, 32, 69, 83, 84, 69, 73, 68, 45, 83, 75, 32, 50, 48, 49, 56, 32, 65, 73, 65, 32, 79, 67, 83, 80, 32, 82, 69, 83, 80, 79, 78, 68, 69, 82, 32, 50, 48, 49, 56, 49, 13, 48, 11, 6, 3, 85, 4, 11, 12, 4, 79, 67, 83, 80, 49, 27, 48, 25, 6, 3, 85, 4, 10, 12, 18, 83, 75, 32, 73, 68, 32, 83, 111, 108, 117, 116, 105, 111, 110, 115, 32, 65, 83, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 69, 69, 48, -126, 1, 34, 48, 13, 6, 9, 42, -122, 72, -122, -9, 13, 1, 1, 1, 5, 0, 3, -126, 1, 15, 0, 48, -126, 1, 10, 2, -126, 1, 1, 0, -71, 21, -126, 37, -46, -110, 122, 52, -55, -17, -53, -58, 79, -39, -63, -47, -10, 26, -122, 34, 121, -23, 94, -51, -118, 27, -13, -92, 110, 1, 55, -35, -115, 86, -95, 63, -21, 11, 105, 98, -84, -73, 81, -89, -91, 50, 25, 97, -31, 69, 113, -13, -88, 20, -114, 103, 16, -125, 6, 49, 39, 89, 117, -101, -123, 96, 43, -89, -14, -17, 0, 118, 25, -49, 54, 46, 115, -38, -32, 120, -30, -108, -18, 20, 82, -62, -114, -40, -118, -71, -91, -59, -83, -13, 46, -12, 20, -95, 39, 27, 56, 55, -38, 14, -71, -81, -42, 7, 83, -41, 9, 117, 36, -8, 87, -116, -122, -27, -44, 68, 56, -100, 107, -32, 31, 108, 99, 82, 48, -41, -37, -83, -22, -29, -24, -113, 76, -2, 24, -75, 7, -117, -126, 88, -66, 114, 76, 97, 51, -50, -58, -8, 119, -78, -99, -67, 110, 86, -12, 23, 7, 60, -39, -63, -78, -17, -26, 55, -117, 67, -19, 101, 50, -124, -49, -52, -75, -113, -84, -107, -111, -53, -109, -69, 33, 84, 104, 118, -67, 1, -106, 52, -4, -44, -36, -1, -96, -103, 109, 37, 63, -44, -24, 106, -84, 85, 58, 47, -77, -96, -112, 107, 101, 52, 98, 78, -4, 70, -115, 109, -121, 119, -37, 123, 117, -48, -37, -121, 19, 4, 67, 8, -75, 51, 25, 110, 70, -1, 7, -79, -62, 103, 13, -67, -68, -109, -20, 97, 88, -127, -15, 121, -12, -45, -13, -69, 2, 3, 1, 0, 1, -93, -127, -35, 48, -127, -38, 48, 14, 6, 3, 85, 29, 15, 1, 1, -1, 4, 4, 3, 2, 7, -128, 48, 22, 6, 3, 85, 29, 37, 1, 1, -1, 4, 12, 48, 10, 6, 8, 43, 6, 1, 5, 5, 7, 3, 9, 48, 29, 6, 3, 85, 29, 14, 4, 22, 4, 20, 87, -57, 32, -3, -50, -5, -101, -19, 68, 8, -8, -120, 110, 123, 22, -78, -57, -33, -119, -12, 48, 31, 6, 3, 85, 29, 35, 4, 24, 48, 22, -128, 20, -64, -124, -103, 41, -60, 78, -97, 59, 2, 52, -10, -103, -31, 10, 86, 0, 8, 41, 62, 123, 48, 81, 6, 8, 43, 6, 1, 5, 5, 7, 1, 1, 4, 69, 48, 67, 48, 65, 6, 8, 43, 6, 1, 5, 5, 7, 48, 2, -122, 53, 104, 116, 116, 112, 115, 58, 47, 47, 115, 107, 46, 101, 101, 47, 117, 112, 108, 111, 97, 100, 47, 102, 105, 108, 101, 115, 47, 84, 69, 83, 84, 95, 111, 102, 95, 69, 83, 84, 69, 73, 68, 50, 48, 49, 56, 46, 100, 101, 114, 46, 99, 114, 116, 48, 12, 6, 3, 85, 29, 19, 1, 1, -1, 4, 2, 48, 0, 48, 15, 6, 9, 43, 6, 1, 5, 5, 7, 48, 1, 5, 4, 2, 5, 0, 48, 10, 6, 8, 42, -122, 72, -50, 61, 4, 3, 4, 3, -127, -117, 0, 48, -127, -121, 2, 66, 1, -124, -6, -108, -46, -107, -89, -64, -123, 87, 51, -54, 105, -9, -14, 74, -41, 90, 55, 2, 70, 65, 85, -28, 59, 93, -91, 30, -117, -98, -33, 74, -9, 110, -96, -77, -86, 124, -92, 4, 121, 75, 99, 32, 127, 69, -45, 19, -91, -106, -58, 120, -91, 9, -58, 11, 115, -124, 76, 10, -62, 2, 67, 123, -38, -125, 2, 65, 28, -122, 48, -34, 68, -96, -19, 14, -9, 82, 104, 0, 32, 36, -9, -23, 113, 24, 17, 68, 53, -1, 121, 106, -122, -68, 113, 39, -127, -116, 54, 69, -90, 3, -30, 107, -72, 29, -7, -62, 35, 60, 96, -49, 111, -119, -17, 124, -53, 59, 101, -120, 51, 70, 16, -33, -36, 17, -92, 29, -59, 74, -97, 32, 19);
+
+ASN1::loadOIDs(array(
+    'id-pkix-ocsp-nonce' => '1.3.6.1.5.5.7.48.1.2',
+    'id-sha1' => '1.3.14.3.2.26',
+    'qcStatements(3)' => '1.3.6.1.5.5.7.1.3',
+    'street' => '2.5.4.9',
+    'id-pkix-ocsp-basic' => '1.3.6.1.5.5.7.48.1.1',
+    'id-pkix-ocsp' => '1.3.6.1.5.5.7.48.1',
+    'secp384r1' => '1.3.132.0.34',
+));
+
+// // OCSP request
+// $decodedRequest = ASN1::decodeBER(pack('c*', ...$request));
+
+// $mappedRequest = ASN1::asn1map($decodedRequest[0], OcspOCSPRequest::MAP);
+
+// $encodedRequest = ASN1::encodeDER($mappedRequest, OcspOCSPRequest::MAP);
+
+// // OCSP response
+// $decodedResponse = ASN1::decodeBER(pack('c*', ...$response));
+
+// $mappedResponse = ASN1::asn1map($decodedResponse[0], OcspOCSPResponse::MAP, array('response' => function ($encoded) {
+//     return ASN1::asn1map(ASN1::decodeBER($encoded)[0], OcspBasicOcspResponse::MAP);
+// }));
+
+// $encodedResponse = ASN1::encodeDER($mappedResponse, OcspOCSPResponse::MAP, array('response' => function ($source) {
+//     return ASN1::encodeDER($source, OcspBasicOcspResponse::MAP);
+// }));
 
 // $result = $x509->loadCA(file_get_contents('./certs/TEST_of_ESTEID-SK_2015.cer'));
 // $result = $x509->loadCA(file_get_contents('./certs/TEST_of_ESTEID2018.cer'));
@@ -67,18 +91,19 @@ $test = $x502->getSubjectDN(X509::DN_STRING);
 // OCSP TESTING
 // http://aia.demo.sk.ee/esteid2018
 $uri = $x509->validateURL('http://aia.demo.sk.ee/esteid2018');
+
 // SIGNATURE TESTING
-// $originHash = hash('sha384', $tokenOrigin, true);
-// $nonceHash = hash('sha384', $tokenNonce, true);
-// $concatSignedFields = $originHash.$nonceHash;
-// $publicKey = $x509->getPublicKey()->withHash("sha384");
+$originHash = hash('sha384', $tokenOrigin, true);
+$nonceHash = hash('sha384', $tokenNonce, true);
+$concatSignedFields = $originHash.$nonceHash;
+$publicKey = $x509->getPublicKey()->withHash('sha384');
 
-// // $publicKey = openssl_pkey_get_public(openssl_x509_read($certificate));
-// $signatureDer = ASN1Util::transcodeSignatureToDER(Base64Util::decodeBase64($token->signature));
-// // $foo = openssl_verify($concatSignedFields, $seclib['signature'], $publicKey, OPENSSL_ALGO_SHA384);
+// $publicKey = openssl_pkey_get_public(openssl_x509_read($certificate));
+$signatureDer = ASN1Util::transcodeSignatureToDER(Base64Util::decodeBase64($token->signature));
+// $foo = openssl_verify($concatSignedFields, $seclib['signature'], $publicKey, OPENSSL_ALGO_SHA384);
 
-// $test = $publicKey->verify($concatSignedFields, pack('c*', ...$signatureDer));
-// //$test = $publicKey->verify($concatSignedFields, base64_decode($token->signature, true)); // works with RS256
+$test = $publicKey->verify($concatSignedFields, pack('c*', ...$signatureDer));
+// $test = $publicKey->verify($concatSignedFields, base64_decode($token->signature, true)); // works with RS256
 
 // $x510 = clone $x509;
 // $x510->setDNProp('CN', 'peterko');

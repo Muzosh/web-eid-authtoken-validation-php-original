@@ -39,7 +39,7 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
 		$certificateId = getCertificateId($subjectCertificate, $trustValidator->getSubjectCertificateIssuerCertificate());
 
 		$request = new OcspRequestBuilder()
-			.withCertificateId(certificateId)
+			.withCertificateId($certificateId)
 			.enableOcspNonce($ocspService->doesSupportNonce())
 			.build();
 

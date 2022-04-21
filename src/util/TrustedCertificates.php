@@ -7,27 +7,27 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 use Countable;
 
 // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-final class CertStore
-{
-    private X509Array $certificates;
-    private array $CRLs;
+// final class CertStore
+// {
+//     private X509Array $certificates;
+//     private array $CRLs;
 
-    public function __construct(array $certificates, array $CRLs = null)
-    {
-        $this->certificates = new X509Array(...$certificates);
-        $this->CRLs = $CRLs ?? array();
-    }
+//     public function __construct(array $certificates, array $CRLs = null)
+//     {
+//         $this->certificates = new X509Array(...$certificates);
+//         $this->CRLs = $CRLs ?? array();
+//     }
 
-    public function getCertificates(): X509Array
-    {
-        return $this->certificates;
-    }
+//     public function getCertificates(): X509Array
+//     {
+//         return $this->certificates;
+//     }
 
-    public function getCRLs(): array
-    {
-        return $this->CRLs;
-    }
-}
+//     public function getCRLs(): array
+//     {
+//         return $this->CRLs;
+//     }
+// }
 
 // TODO: can be changed for define(currentClass::class . "CONST_NAME", EXPRESSION)
 // for nonmalluable variable
