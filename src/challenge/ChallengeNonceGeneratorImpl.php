@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\challenge;
 
 use DateInterval;
-use muzosh\web_eid_authtoken_validation_php\util\Base64Util;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
 
 final class ChallengeNonceGeneratorImpl implements ChallengeNonceGenerator
@@ -23,11 +22,11 @@ final class ChallengeNonceGeneratorImpl implements ChallengeNonceGenerator
 
     public function generateAndStoreNonce(): ChallengeNonce
     {
-        $nonceBytes = call_user_func($this->secureRandom, $this::NONCE_LENGTH);
+        $nonceString = call_user_func($this->secureRandom, $this::NONCE_LENGTH);
         $expirationTime = DateAndTime::utcNow()->add(new DateInterval('PT'.$this->ttlSeconds.'S'));
-        $base64Nonce = Base64Util::encodeBase64($nonceBytes);
+        $base64Nonce = base64_encode($nonceString);
         $challengeNonce = new ChallengeNonce($base64Nonce, $expirationTime);
-        $this->challengeNonceStore->put($this->challengeNonce);
+        $this->challengeNonceStore->put($challengeNonce);
 
         return $challengeNonce;
     }

@@ -18,10 +18,11 @@ use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCert
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateTrustedValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateValidatorBatch;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClient;
-use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClientHTTPImpl;
+use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClientImpl;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspServiceProvider;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\AiaOcspServiceConfiguration;
 use phpseclib3\File\X509;
+use Throwable;
 
 /**
  * Provides the default implementation of AuthTokenValidator.
@@ -67,7 +68,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         );
 
         if ($configuration->isUserCertificateRevocationCheckWithOcspEnabled()) {
-            $this->ocspClient = OcspClientHTTPImpl::build($configuration->getOcspRequestTimeout());
+            $this->ocspClient = OcspClientImpl::build($configuration->getOcspRequestTimeoutSeconds());
             $this->ocspServiceProvider = new OcspServiceProvider(
                 $configuration->getDesignatedOcspServiceConfiguration(),
                 new AiaOcspServiceConfiguration(
@@ -84,16 +85,29 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
     public function parse(string $authToken): WebEidAuthToken
     {
         $this->logger->info('Starting token parsing');
-        $this->validateTokenLength($authToken);
 
-        return $this->parseToken($authToken);
+        try {
+            $this->validateTokenLength($authToken);
+
+            return $this->parseToken($authToken);
+        } catch (Throwable $e) {
+            $this->logger->warning('Token parsing was interrupted: '.print_r($e));
+
+            throw $e;
+        }
     }
 
     public function validate(WebEidAuthToken $authToken, string $currentChallengeNonce): X509
     {
         $this->logger->info('Starting token validation');
 
-        return $this->validateToken($authToken, $currentChallengeNonce);
+        try {
+            return $this->validateToken($authToken, $currentChallengeNonce);
+        } catch (Throwable $e) {
+            $this->logger->warning('Token validation was interrupted: '.print_r($e));
+
+            throw $e;
+        }
     }
 
     private function validateTokenLength(string $authToken): void
@@ -114,8 +128,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
     private function validateToken(WebEidAuthToken $token, string $currentChallengeNonce): X509
     {
         if (is_null($token->getFormat()) || 0 !== strpos($token->getFormat(), AuthTokenValidator::CURRENT_TOKEN_FORMAT_VERSION)) {
-            throw new AuthTokenParseException("Only token format version '".AuthTokenValidator::CURRENT_TOKEN_FORMAT_VERSION.
-                "' is currently supported");
+            throw new AuthTokenParseException("Only token format version '".AuthTokenValidator::CURRENT_TOKEN_FORMAT_VERSION."' is currently supported");
         }
         $unverifiedCertificate = $token->getUnverifiedCertificate();
 
@@ -151,7 +164,10 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
     private function getCertTrustValidators(): SubjectCertificateValidatorBatch
     {
         $certTrustedValidator =
-            new SubjectCertificateTrustedValidator($this->trustedCACertificateAnchors, $this->trustedCACertificateCertStore);
+            new SubjectCertificateTrustedValidator(
+                $this->trustedCACertificateAnchors,
+                // $this->trustedCACertificateCertStore
+            );
 
         $validatorBatch = new SubjectCertificateValidatorBatch(
             $certTrustedValidator

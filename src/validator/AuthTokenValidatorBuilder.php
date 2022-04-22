@@ -57,7 +57,7 @@ class AuthTokenValidatorBuilder
         array_push($this->configuration->getTrustedCACertificates(), ...$certificates);
 
         $this->logger->debug(
-            'Trusted intermediate certificate authorities set to '.json_encode(X509Array::getSubjectDNs(null, ...$this->configuration->getTrustedCACertificates()))
+            'Trusted intermediate certificate authorities added: '.json_encode(X509Array::getSubjectDNs(null, ...$this->configuration->getTrustedCACertificates()))
         );
 
         return $this;
@@ -109,7 +109,7 @@ class AuthTokenValidatorBuilder
      */
     public function withOcspRequestTimeout(int $ocspRequestTimeoutSeconds): AuthTokenValidatorBuilder
     {
-        $this->configuration->setOcspRequestTimeout($ocspRequestTimeoutSeconds);
+        $this->configuration->setOcspRequestTimeoutSeconds($ocspRequestTimeoutSeconds);
         $this->logger->debug('OCSP request timeout set to '.$ocspRequestTimeoutSeconds.' seconds.');
 
         return $this;
@@ -123,10 +123,12 @@ class AuthTokenValidatorBuilder
      *
      * @return the builder instance for method chaining
      */
-    public function withNonceDisabledOcspUrls(URI ...$urls): AuthTokenValidatorBuilder
+    public function withNonceDisabledOcspUrls(URI ...$uris): AuthTokenValidatorBuilder
     {
-        array_push($this->configuration->getNonceDisabledOcspUrls(), ...array_unique($urls, SORT_REGULAR));
-        $this->logger->debug('OCSP URLs for which the nonce protocol extension is disabled set to '.json_encode($this->configuration->getNonceDisabledOcspUrls()));
+        foreach ($uris as $uri) {
+            $this->configuration->getNonceDisabledOcspUrls()->pushItem($uri);
+        }
+        $this->logger->debug('OCSP URLs for which the nonce protocol extension is disabled set to '.implode(', ', $this->configuration->getNonceDisabledOcspUrls()->getUrls()));
 
         return $this;
     }

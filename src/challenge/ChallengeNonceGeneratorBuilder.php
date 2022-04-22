@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\challenge;
 
+use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
-use UnexpectedValueException;
 
 /**
  * Builder for constructing ChallengeNonceGenerator instances.
@@ -21,7 +21,7 @@ class ChallengeNonceGeneratorBuilder
         $this->ttlSeconds = 300; // 5 minutes
 
         $this->secureRandom = function ($nonce_length) {
-            return unpack('c*', random_bytes($nonce_length));
+            return random_bytes($nonce_length);
         };
     }
 
@@ -83,10 +83,10 @@ class ChallengeNonceGeneratorBuilder
     private function validateParameters(): void
     {
         if (is_null($this->challengeNonceStore)) {
-            throw new UnexpectedValueException('Challenge nonce store must not be null');
+            throw new InvalidArgumentException('Challenge nonce store must not be null');
         }
         if (is_null($this->secureRandom)) {
-            throw new UnexpectedValueException('Secure random generator must not be null');
+            throw new InvalidArgumentException('Secure random generator must not be null');
         }
         DateAndTime::requirePositiveDuration($this->ttlSeconds, 'Nonce TTL');
     }

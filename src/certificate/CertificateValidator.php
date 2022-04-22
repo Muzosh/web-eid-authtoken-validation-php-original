@@ -6,7 +6,6 @@ namespace muzosh\web_eid_authtoken_validation_php\certificate;
 
 use BadFunctionCallException;
 use DateTime;
-use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
@@ -37,10 +36,6 @@ final class CertificateValidator
     public static function trustedCACertificatesAreValidOnDate(TrustedAnchors $trustedCACertificateAnchors, DateTime $date): void
     {
         foreach ($trustedCACertificateAnchors->getCertificates() as $cert) {
-            if (!$cert instanceof X509) {
-                throw new InvalidArgumentException('Invalid trustedCACertificateAnchor format.');
-            }
-
             CertificateValidator::certificateIsValidOnDate($cert, $date, 'Trusted CA');
         }
     }
@@ -56,8 +51,11 @@ final class CertificateValidator
             $certificate->loadCA($trustedCertificate->saveX509($trustedCertificate->getCurrentCert(), X509::FORMAT_PEM));
         }
 
+        // ? Do we want to disable fetching of isser certificates of loaded intermediate certs?
+        // $certificate->disableURLFetch();
+
         if ($certificate->validateSignature()) {
-            return end(array_values($certificate->getChain()));
+            return end($certificate->getChain());
         }
 
         throw new CertificateNotTrustedException($certificate);

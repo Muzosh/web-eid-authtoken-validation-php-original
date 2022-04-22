@@ -7,7 +7,7 @@ namespace muzosh\web_eid_authtoken_validation_php\util\ocsp\maps;
 use phpseclib3\File\ASN1;
 use phpseclib3\File\ASN1\Maps\Extensions;
 
-abstract class OcspResponseData
+abstract class OcspTbsResponseData
 {
     public const MAP = array(
         'type' => ASN1::TYPE_SEQUENCE,
@@ -22,7 +22,7 @@ abstract class OcspResponseData
             ),
             'responderID' => OcspResponderId::MAP,
             'producedAt' => array('type' => ASN1::TYPE_GENERALIZED_TIME),
-            'reponses' => OcspSingleResponses::MAP,
+            'responses' => OcspSingleResponses::MAP,
             'responseExtensions' => array(
                 'constant' => 1,
                 'explicit' => true,

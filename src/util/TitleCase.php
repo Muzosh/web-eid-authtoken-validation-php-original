@@ -6,8 +6,8 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 
 use BadFunctionCallException;
 
-// THIS CLASS MIGHT NOT BE USED AT ALL
-// TODO: ask an author about this?
+// TODO: THIS CLASS MIGHT NOT BE USED AT ALL
+// in java it is used only in testing
 final class TitleCase
 {
     public function __construct()

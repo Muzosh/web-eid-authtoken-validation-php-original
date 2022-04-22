@@ -13,8 +13,8 @@ use phpseclib3\File\X509;
 
 class OcspServiceProvider
 {
-    private $designatedOcspService;
-    private $aiaOcspServiceConfiguration;
+    private ?DesignatedOcspServiceConfiguration $designatedOcspService;
+    private AiaOcspServiceConfiguration $aiaOcspServiceConfiguration;
 
     public function __construct(?DesignatedOcspServiceConfiguration $designatedOcspServiceConfiguration, AiaOcspServiceConfiguration $aiaOcspServiceConfiguration)
     {
@@ -32,8 +32,6 @@ class OcspServiceProvider
      *
      * @throws AuthTokenException           when AIA URL is not found in certificate
      * @throws CertificateEncodingException when certificate is invalid
-     *
-     * @return either the designated or AIA OCSP service instance
      */
     public function getService(X509 $certificate): OcspService
     {

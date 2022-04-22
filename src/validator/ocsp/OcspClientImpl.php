@@ -10,11 +10,12 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\RequestOptions;
 use Monolog\Logger;
+use muzosh\web_eid_authtoken_validation_php\util\ocsp\Response;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use RuntimeException;
 use UnexpectedValueException;
 
-class OcspClientHTTPImpl implements OcspClient
+class OcspClientImpl implements OcspClient
 {
     private const OCSP_REQUEST_TYPE = 'application/ocsp-request';
     private const OCSP_RESPONSE_TYPE = 'application/ocsp-response';
@@ -25,13 +26,13 @@ class OcspClientHTTPImpl implements OcspClient
 
     private function __construct(Client $httpClient)
     {
-        $this->logger = WebEidLogger::getLogger(OcspClientHTTPImpl::class);
+        $this->logger = WebEidLogger::getLogger(OcspClientImpl::class);
         $this->httpClient = $httpClient;
     }
 
     public static function build(int $ocspRequestTimeoutSeconds): OcspClient
     {
-        return new OcspClientHTTPImpl(
+        return new OcspClientImpl(
             new Client(array(
                 RequestOptions::ALLOW_REDIRECTS => false,
                 RequestOptions::CONNECT_TIMEOUT => (float) $ocspRequestTimeoutSeconds,
@@ -40,10 +41,10 @@ class OcspClientHTTPImpl implements OcspClient
         );
     }
 
-    public function request(Uri $uri, string $encodedOcspRequest): string
+    public function request(Uri $uri, string $encodedOcspRequest): Response
     {
         $request = new Request('POST', $uri, array(
-            'Content-Type' => OcspClientHTTPImpl::OCSP_REQUEST_TYPE,
+            'Content-Type' => OcspClientImpl::OCSP_REQUEST_TYPE,
             'charset' => 'utf-8',
         ), $encodedOcspRequest);
 
@@ -63,10 +64,10 @@ class OcspClientHTTPImpl implements OcspClient
 
         $contentType = $response->getHeader('Content-Type');
 
-        if (empty($contentType) || false === strpos($contentType[0], OcspClientHTTPImpl::OCSP_RESPONSE_TYPE)) {
-            throw new UnexpectedValueException('OCSP response content type is not '.OcspClientHTTPImpl::OCSP_RESPONSE_TYPE);
+        if (empty($contentType) || false === strpos($contentType[0], OcspClientImpl::OCSP_RESPONSE_TYPE)) {
+            throw new UnexpectedValueException('OCSP response content type is not '.OcspClientImpl::OCSP_RESPONSE_TYPE);
         }
 
-        return $response->getBody()->getContents();
+        return new Response($response->getBody()->getContents());
     }
 }

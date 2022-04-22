@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\authtoken;
 
+use UnexpectedValueException;
+
 class WebEidAuthToken
 {
     private ?string $unverifiedCertificate = null;
@@ -14,10 +16,11 @@ class WebEidAuthToken
     public function __construct(string $json)
     {
         // TODO: maybe use some library for json loading?
-
-        foreach (json_decode($json, true) ?? array() as $key => $value) {
+        foreach (json_decode($json, true) ?? array('json_decode_error' => '') as $key => $value) {
             if (property_exists(__CLASS__, $key)) {
                 $this->{$key} = $value;
+            } else {
+                throw new UnexpectedValueException('Unknown WebEidAuthToken key: '.$key);
             }
         }
     }

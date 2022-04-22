@@ -31,8 +31,9 @@ class DesignatedOcspServiceConfiguration
         $this->ocspServiceAccessLocation = $ocspServiceAccessLocation;
         $this->responderCertificate = $responderCertificate;
         $this->supportedIssuers = X509Array::getSubjectDNs($supportedCertificateIssuers);
-        OcspResponseValidator::validateHasSigningExtension($responderCertificate);
         $this->doesSupportNonce = $doesSupportNonce;
+
+        OcspResponseValidator::validateHasSigningExtension($responderCertificate);
     }
 
     public function getOcspServiceAccessLocation(): Uri
@@ -53,11 +54,5 @@ class DesignatedOcspServiceConfiguration
     public function supportsIssuerOf(X509 $certificate): bool
     {
         return in_array($certificate->getIssuerDN(X509::DN_STRING), $this->supportedIssuers, true);
-    }
-
-    private function getSubject(X509 $certificate): string
-    {
-        // TODO: check this "C=EE,O=SK ID Solutions AS,organizationIdentifier=NTREE-10747013,CN=TEST of ESTEID2018"
-        return $certificate->getSubjectDN(X509::DN_STRING);
     }
 }

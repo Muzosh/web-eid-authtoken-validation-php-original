@@ -18,8 +18,6 @@ interface AuthTokenValidator
      * Parses the Web eID authentication token signed by the subject.
      *
      * @param authToken the Web eID authentication token string, in Web eID JSON format
-     *
-     * @return the Web eID authentication token
      */
     public function parse(string $authToken): WebEidAuthToken;
 
@@ -32,8 +30,6 @@ interface AuthTokenValidator
      *
      * @param authToken the Web eID authentication token
      * @param currentChallengeNonce the challenge nonce that is associated with the authentication token
-     *
-     * @return validated subject certificate
      */
     public function validate(WebEidAuthToken $authToken, string $currentChallengeNonce): X509;
 }

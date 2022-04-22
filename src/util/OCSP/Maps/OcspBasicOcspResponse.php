@@ -12,7 +12,7 @@ abstract class OcspBasicOcspResponse
     public const MAP = array(
         'type' => ASN1::TYPE_SEQUENCE,
         'children' => array(
-            'tbsResponseData' => OcspResponseData::MAP,
+            'tbsResponseData' => OcspTbsResponseData::MAP,
             'signatureAlgorithm' => AlgorithmIdentifier::MAP,
             // The value for signature SHALL be computed on the hash of the DER encoding of ResponseData.
             'signature' => array('type' => ASN1::TYPE_BIT_STRING),

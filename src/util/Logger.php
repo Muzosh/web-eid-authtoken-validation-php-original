@@ -13,9 +13,9 @@ final class WebEidLogger
 {
     public static function getLogger(string $class): Logger
     {
-        // TODO: put this to config or global constant
         $logger = new Logger($class);
 
+        // TODO: put this to config or global constant
         $handler = new StreamHandler('web-eid-authtoken-validation-php.log', Logger::DEBUG, true, null, true);
 
         // $handler->setFormatter(new LineFormatter(null, null, true, false, true));

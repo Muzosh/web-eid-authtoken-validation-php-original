@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
 use GuzzleHttp\Psr7\Uri;
+use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenSignatureValidationException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNullOrEmptyException;
-use muzosh\web_eid_authtoken_validation_php\util\ASN1Util;
 use muzosh\web_eid_authtoken_validation_php\util\Base64Util;
+use muzosh\web_eid_authtoken_validation_php\util\ocsp\ASN1Util;
 use phpseclib3\Crypt\Common\PublicKey;
 
 class AuthTokenSignatureValidator
@@ -28,24 +30,30 @@ class AuthTokenSignatureValidator
         $this->siteOrigin = $siteOrigin;
     }
 
-    public function validate(string $algorithm, string $signature, PublicKey $publicKey, string $currentChallengeNonce): void
+    public function validate(string $algorithm, string $signature, $publicKey, string $currentChallengeNonce): void
     {
         $this->requireNotEmpty($algorithm, 'algorithm');
         $this->requireNotEmpty($signature, 'signature');
+
+        if (is_null($publicKey)) {
+            throw new InvalidArgumentException('Public key is null');
+        }
+
         if (empty($currentChallengeNonce)) {
             throw new ChallengeNullOrEmptyException();
         }
 
         if (!in_array($algorithm, AuthTokenSignatureValidator::ALLOWED_SIGNATURE_ALGORITHMS)) {
-            throw new AuthTokenParseException('Unsupported signature algorithm');
+            throw new AuthTokenParseException('Unsupported signature algorithm: '.$algorithm);
         }
 
-        $decodedSignature = Base64Util::decodeBase64($signature);
         // Note that in case of ECDSA, the eID card outputs raw R||S, so we need to trascode it to DER.
         if ('ES' == substr($algorithm, 0, 2)) {
-            $transcodedBytes = ASN1Util::transcodeSignatureToDER($decodedSignature);
+            $transcodedBytes = ASN1Util::transcodeSignatureToDER(Base64Util::decodeBase64ToArray($signature));
 
             $decodedSignature = pack('c*', ...$transcodedBytes);
+        } else {
+            $decodedSignature = base64_decode($signature);
         }
 
         $hashAlg = $this->hashAlgorithmForName($algorithm);
@@ -54,7 +62,13 @@ class AuthTokenSignatureValidator
         $nonceHash = hash($hashAlg, $currentChallengeNonce, true);
         $concatSignedFields = $originHash.$nonceHash;
 
-        $publicKey->withHash($hashAlg)->verify($concatSignedFields, $decodedSignature);
+        // general interface PublicKey does not have withHash method so with scrict_types it cannot be type hinted
+        // its EC and RSA implementations have it, but multiple type hints ECPublicKey|RSAPublicKey are possible from PHP 8.0
+        $result = $publicKey->withHash($hashAlg)->verify($concatSignedFields, $decodedSignature);
+
+        if (!$result) {
+            throw new AuthTokenSignatureValidationException();
+        }
     }
 
     private function hashAlgorithmForName(string $algorithm): string

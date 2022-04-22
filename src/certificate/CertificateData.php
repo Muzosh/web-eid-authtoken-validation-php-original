@@ -11,6 +11,7 @@ use UnexpectedValueException;
 // in java code there is some special x500 formating?
 // according to the tests there should be backslashes before dashes?
 // why is it converting to JcaX509CertificateHolder object?
+// Example value: [C=EE, CN=JÕEORG\,JAAK-KRISTJAN\,38001085718, 2.5.4.4=#0c074ac395454f5247, 2.5.4.42=#0c0d4a41414b2d4b524953544a414e, 2.5.4.5=#1311504e4f45452d3338303031303835373138]
 // TODO: ask author about this
 
 final class CertificateData
@@ -88,6 +89,6 @@ final class CertificateData
             return $result[0];
         }
 
-        throw new UnexpectedValueException('fieldIdentifier '.$fieldIdentifier.'not found in certificate: '.$certificate->getDN(X509::DN_STRING));
+        throw new UnexpectedValueException('fieldIdentifier '.$fieldIdentifier.' not found in certificate: '.$certificate->getDN(X509::DN_STRING));
     }
 }

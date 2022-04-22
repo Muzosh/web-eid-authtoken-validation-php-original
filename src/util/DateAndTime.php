@@ -27,6 +27,11 @@ final class DateAndTime
             throw new InvalidArgumentException($fieldName.' must be greater than zero');
         }
     }
+
+    public static function toUtcString(DateTime $date): string
+    {
+        return ((clone $date)->setTimezone(new DateTimeZone('UTC')))->format('Y-m-d H:i:s e');
+    }
 }
 
 final class DefaultClock

@@ -6,15 +6,16 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp\service;
 
 use muzosh\web_eid_authtoken_validation_php\util\CertStore;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\UriUniqueArray;
 
 class AiaOcspServiceConfiguration
 {
-    private $nonceDisabledOcspUrls;
-    private $trustedCACertificateAnchors;
+    private UriUniqueArray $nonceDisabledOcspUrls;
+    private TrustedAnchors $trustedCACertificateAnchors;
     private $trustedCACertificateCertStore;
 
     // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-    public function __construct(array $nonceDisabledOcspUrls, TrustedAnchors $trustedCACertificateAnchors)// , CertStore $trustedCACertificateCertStore)
+    public function __construct(UriUniqueArray $nonceDisabledOcspUrls, TrustedAnchors $trustedCACertificateAnchors)// , CertStore $trustedCACertificateCertStore)
     {
         $this->nonceDisabledOcspUrls = $nonceDisabledOcspUrls;
         $this->trustedCACertificateAnchors = $trustedCACertificateAnchors;
@@ -22,7 +23,7 @@ class AiaOcspServiceConfiguration
         // $this->trustedCACertificateCertStore = $trustedCACertificateCertStore;
     }
 
-    public function getNonceDisabledOcspUrls(): array
+    public function getNonceDisabledOcspUrls(): UriUniqueArray
     {
         return $this->nonceDisabledOcspUrls;
     }

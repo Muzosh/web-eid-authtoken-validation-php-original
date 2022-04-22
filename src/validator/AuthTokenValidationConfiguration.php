@@ -8,34 +8,36 @@ use GuzzleHttp\Psr7\Uri;
 use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
 use muzosh\web_eid_authtoken_validation_php\util\SubjectCertificatePolicyIds;
+use muzosh\web_eid_authtoken_validation_php\util\UriUniqueArray;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspUrl;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\DesignatedOcspServiceConfiguration;
-use UnexpectedValueException;
 
 /**
  * Stores configuration parameters for AuthTokenValidatorImpl.
  */
 final class AuthTokenValidationConfiguration
 {
-    private Uri $siteOrigin;
-    private array $trustedCACertificates = array();
     private bool $isUserCertificateRevocationCheckWithOcspEnabled = true;
-    private int $ocspRequestTimeoutSeconds;
+    private int $ocspRequestTimeoutSeconds = 5;
+    private Uri $siteOrigin;
     private DesignatedOcspServiceConfiguration $designatedOcspServiceConfiguration;
 
-    // Don't allow Estonian Mobile-ID policy by default.
-    private array $disallowedSubjectCertificatePolicyIds = array(SubjectCertificatePolicyIds::$ESTEID_SK_2015_MOBILE_ID_POLICY_V1,
-        SubjectCertificatePolicyIds::$ESTEID_SK_2015_MOBILE_ID_POLICY_V2,
-        SubjectCertificatePolicyIds::$ESTEID_SK_2015_MOBILE_ID_POLICY_V3,
-        SubjectCertificatePolicyIds::$ESTEID_SK_2015_MOBILE_ID_POLICY,
-    );
-
-    // Disable OCSP nonce extension for EstEID 2015 cards by default.
-    private array $nonceDisabledOcspUrls = array(new Uri(OcspUrl::AIA_ESTEID_2015_URL));
+    private array $trustedCACertificates = array();
+    private array $disallowedSubjectCertificatePolicyIds;
+    private UriUniqueArray $nonceDisabledOcspUrls;
 
     public function __construct()
     {
-        $this->ocspRequestTimeoutSeconds = 5;
+        // Don't allow Estonian Mobile-ID policy by default.
+        $this->disallowedSubjectCertificatePolicyIds = array(
+            SubjectCertificatePolicyIds::$ESTEID_SK_2015_MOBILE_ID_POLICY_V1,
+            SubjectCertificatePolicyIds::$ESTEID_SK_2015_MOBILE_ID_POLICY_V2,
+            SubjectCertificatePolicyIds::$ESTEID_SK_2015_MOBILE_ID_POLICY_V3,
+            SubjectCertificatePolicyIds::$ESTEID_SK_2015_MOBILE_ID_POLICY,
+        );
+
+        // Disable OCSP nonce extension for EstEID 2015 cards by default.
+        $this->nonceDisabledOcspUrls = new UriUniqueArray(new Uri(OcspUrl::AIA_ESTEID_2015_URL));
     }
 
     public function setSiteOrigin(Uri $siteOrigin): void
@@ -63,12 +65,12 @@ final class AuthTokenValidationConfiguration
         $this->isUserCertificateRevocationCheckWithOcspEnabled = false;
     }
 
-    public function getOcspRequestTimeout(): int
+    public function getOcspRequestTimeoutSeconds(): int
     {
         return $this->ocspRequestTimeoutSeconds;
     }
 
-    public function setOcspRequestTimeout(int $ocspRequestTimeoutSeconds): void
+    public function setOcspRequestTimeoutSeconds(int $ocspRequestTimeoutSeconds): void
     {
         $this->ocspRequestTimeoutSeconds = $ocspRequestTimeoutSeconds;
     }
@@ -88,7 +90,7 @@ final class AuthTokenValidationConfiguration
         return $this->disallowedSubjectCertificatePolicyIds;
     }
 
-    public function getNonceDisabledOcspUrls(): array
+    public function getNonceDisabledOcspUrls(): UriUniqueArray
     {
         return $this->nonceDisabledOcspUrls;
     }
@@ -102,7 +104,7 @@ final class AuthTokenValidationConfiguration
     public function validate(): void
     {
         if (is_null($this->siteOrigin)) {
-            throw new UnexpectedValueException('Origin URI must not be null');
+            throw new InvalidArgumentException('Origin URI must not be null');
         }
 
         AuthTokenValidationConfiguration::validateIsOriginURL($this->siteOrigin);
@@ -134,27 +136,33 @@ final class AuthTokenValidationConfiguration
         }
 
         // 2. Verify that the URI contains only HTTPS scheme, host and optional port components.
-        if (!Uri::isSameDocumentReference($uri, Uri::fromParts(array(
-            'scheme' => 'https',
-            'host' => $uri->getHost(),
-            'port' => $uri->getPort(),
-        )))) {
+        if (!Uri::isSameDocumentReference(
+            $uri,
+            Uri::fromParts(
+                array(
+                    'scheme' => 'https',
+                    'host' => $uri->getHost(),
+                    'port' => $uri->getPort(),
+                )
+            )
+        )) {
             throw new InvalidArgumentException('Origin URI must only contain the HTTPS scheme, host and optional port component');
         }
     }
 
-    private static function duplicate(AuthTokenValidationConfiguration $other)
-    {
-        $new = new AuthTokenValidationConfiguration();
+    // might not be needed since we use 'clone' in PHP
+    // private static function duplicate(AuthTokenValidationConfiguration $other)
+    // {
+    //     $new = new AuthTokenValidationConfiguration();
 
-        $new->siteOrigin = clone $other->siteOrigin;
-        $new->trustedCACertificates = array_unique($other->trustedCACertificates, SORT_REGULAR);
-        $new->isUserCertificateRevocationCheckWithOcspEnabled = clone $other->isUserCertificateRevocationCheckWithOcspEnabled;
-        $new->ocspRequestTimeoutSeconds = $other->ocspRequestTimeoutSeconds;
-        $new->designatedOcspServiceConfiguration = clone $other->designatedOcspServiceConfiguration;
-        $new->disallowedSubjectCertificatePolicyIds = array_unique($other->disallowedSubjectCertificatePolicyIds, SORT_REGULAR);
-        $new->nonceDisabledOcspUrls = clone array_unique($other->nonceDisabledOcspUrls, SORT_REGULAR);
+    //     $new->siteOrigin = clone $other->siteOrigin;
+    //     $new->trustedCACertificates = array_unique($other->trustedCACertificates, SORT_REGULAR);
+    //     $new->isUserCertificateRevocationCheckWithOcspEnabled = clone $other->isUserCertificateRevocationCheckWithOcspEnabled;
+    //     $new->ocspRequestTimeoutSeconds = $other->ocspRequestTimeoutSeconds;
+    //     $new->designatedOcspServiceConfiguration = clone $other->designatedOcspServiceConfiguration;
+    //     $new->disallowedSubjectCertificatePolicyIds = array_unique($other->disallowedSubjectCertificatePolicyIds, SORT_REGULAR);
+    //     $new->nonceDisabledOcspUrls = clone $other->nonceDisabledOcspUrls;
 
-        return $new;
-    }
+    //     return $new;
+    // }
 }

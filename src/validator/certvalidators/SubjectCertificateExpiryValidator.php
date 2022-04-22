@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
+use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\util\DefaultClock;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
@@ -12,8 +13,8 @@ use phpseclib3\File\X509;
 
 final class SubjectCertificateExpiryValidator implements SubjectCertificateValidator
 {
-    private $logger;
-    private $trustedCACertificateAnchors;
+    private Logger $logger;
+    private TrustedAnchors $trustedCACertificateAnchors;
 
     public function __construct(TrustedAnchors $trustedCACertificateAnchors)
     {

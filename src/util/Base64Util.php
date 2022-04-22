@@ -13,12 +13,12 @@ final class Base64Util
         throw new BadFunctionCallException('Utility class');
     }
 
-    public static function decodeBase64(string $base64Str): array
+    public static function decodeBase64ToArray(string $base64Str): array
     {
         return array_values(unpack('c*', base64_decode($base64Str)));
     }
 
-    public static function encodeBase64(array $bytes): string
+    public static function encodeBase64FromArray(array $bytes): string
     {
         return base64_encode(pack('c*', ...$bytes));
     }

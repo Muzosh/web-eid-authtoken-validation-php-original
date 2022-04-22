@@ -31,7 +31,7 @@ class AiaOcspService implements OcspService
         // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
         // $this->trustedCACertificateCertStore = $configuration->getTrustedCACertificateCertStore();
         $this->url = AiaOcspService::getOcspAiaUrlFromCertificate($certificate);
-        $this->supportsNonce = !in_array($this->url, $configuration->getNonceDisabledOcspUrls());
+        $this->supportsNonce = $configuration->getNonceDisabledOcspUrls()->inArray($this->url);
     }
 
     public function doesSupportNonce(): bool
