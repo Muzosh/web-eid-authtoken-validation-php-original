@@ -7,14 +7,14 @@ namespace muzosh\web_eid_authtoken_validation_php\util\ocsp;
 use muzosh\web_eid_authtoken_validation_php\util\ocsp\maps\OcspOCSPRequest;
 use phpseclib3\File\ASN1;
 
-class Request
+class OcspRequestObject
 {
     private array $ocspRequest = array();
 
     /**
      * Default Constructor.
      *
-     * @return Request
+     * @return OcspRequestObject
      */
     public function __construct()
     {

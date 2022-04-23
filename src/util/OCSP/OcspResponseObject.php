@@ -11,7 +11,7 @@ use phpseclib3\File\ASN1\Maps\Certificate;
 use phpseclib3\File\X509;
 use UnexpectedValueException;
 
-class Response
+class OcspResponseObject
 {
     public const ID_PKIX_OCSP_BASIC_STRING = 'id-pkix-ocsp-basic';
     private array $ocspResponse = array();
@@ -50,15 +50,15 @@ class Response
         return $this->ocspResponse['responseStatus'];
     }
 
-    public function getBasicResponse(): BasicResponse
+    public function getBasicResponse(): BasicResponseObject
     {
-        if (Response::ID_PKIX_OCSP_BASIC_STRING != $this->ocspResponse['responseBytes']['responseType']) {
+        if (OcspResponseObject::ID_PKIX_OCSP_BASIC_STRING != $this->ocspResponse['responseBytes']['responseType']) {
             throw new UnexpectedValueException(
                 'OcspResponse->reponseBytes->responseType is not "id-pkix-ocsp-basic": '.
                 $this->ocspResponse['responseBytes']['responseType']
             );
         }
 
-        return new BasicResponse($this->ocspResponse['responseBytes']['response']);
+        return new BasicResponseObject($this->ocspResponse['responseBytes']['response']);
     }
 }

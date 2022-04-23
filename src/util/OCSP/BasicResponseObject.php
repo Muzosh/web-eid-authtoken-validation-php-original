@@ -8,7 +8,7 @@ use DateTime;
 use muzosh\web_eid_authtoken_validation_php\util\ocsp\maps\OcspTbsResponseData;
 use phpseclib3\File\ASN1;
 
-class BasicResponse
+class BasicResponseObject
 {
     private array $ocspBasicResponse = array();
 

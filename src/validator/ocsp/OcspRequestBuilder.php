@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp;
 
 use InvalidArgumentException;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\Request;
+use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspRequestObject;
 
 final class OcspRequestBuilder
 {
@@ -35,9 +35,9 @@ final class OcspRequestBuilder
         return $this;
     }
 
-    public function build(): Request
+    public function build(): OcspRequestObject
     {
-        $ocspRequest = new Request();
+        $ocspRequest = new OcspRequestObject();
 
         if (!isset($this->certificateIdMapped)) {
             throw new InvalidArgumentException('CertificateId is not set. withCertificateId() should have been called before build().');

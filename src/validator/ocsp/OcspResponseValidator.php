@@ -11,7 +11,7 @@ use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateRevokedException;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\BasicResponse;
+use muzosh\web_eid_authtoken_validation_php\util\ocsp\BasicResponseObject;
 use phpseclib3\File\X509;
 
 final class OcspResponseValidator
@@ -39,7 +39,7 @@ final class OcspResponseValidator
         }
     }
 
-    public static function validateResponseSignature(BasicResponse $basicResponse, X509 $responderCert): void
+    public static function validateResponseSignature(BasicResponseObject $basicResponse, X509 $responderCert): void
     {
         $publicKey = $responderCert->getPublicKey()->withHash($basicResponse->getSignatureAlgorithm());
 

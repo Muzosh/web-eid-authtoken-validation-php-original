@@ -29,7 +29,7 @@ use Countable;
 //     }
 // }
 
-// TODO: can be maybe changed for define(currentClass::class . "CONST_NAME", EXPRESSION) for nonmalluable variable?
+// TODO: can be maybe changed for define(currentClass::class . "CONST_NAME", EXPRESSION) for nonmalluable variable instead of object with private property?
 final class TrustedAnchors implements Countable
 {
     private X509UniqueArray $certificates;

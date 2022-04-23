@@ -15,7 +15,7 @@ use phpseclib3\File\X509;
  */
 class DesignatedOcspService implements OcspService
 {
-    private $configuration;
+    private DesignatedOcspServiceConfiguration $configuration;
 
     public function __construct(DesignatedOcspServiceConfiguration $configuration)
     {

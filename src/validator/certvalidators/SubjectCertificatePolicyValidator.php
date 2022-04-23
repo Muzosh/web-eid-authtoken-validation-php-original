@@ -9,7 +9,7 @@ use phpseclib3\File\X509;
 
 final class SubjectCertificatePolicyValidator implements SubjectCertificateValidator
 {
-    private $disallowedSubjectCertificatePolicyIds;
+    private array $disallowedSubjectCertificatePolicyIds;
 
     public function __construct(array $disallowedSubjectCertificatePolicyIds)
     {
@@ -21,7 +21,7 @@ final class SubjectCertificatePolicyValidator implements SubjectCertificateValid
         $policiesArray = $subjectCertificate->getExtension('id-ce-certificatePolicies');
 
         foreach ($policiesArray as $policy) {
-            if (in_array($policy['policyIdentifier'], $this->disallowedSubjectCertificatePolicyIds)) {
+            if (in_array($policy['policyIdentifier'], $this->disallowedSubjectCertificatePolicyIds, true)) {
                 throw new UserCertificateDisallowedPolicyException();
             }
         }

@@ -9,7 +9,7 @@ use phpseclib3\File\X509;
 
 final class SubjectCertificateValidatorBatch
 {
-    private $validatorList;
+    private SubjectCertificateValidatorArray $validatorList;
 
     public function __construct(SubjectCertificateValidator ...$validatorList)
     {

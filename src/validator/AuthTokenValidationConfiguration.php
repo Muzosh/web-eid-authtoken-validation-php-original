@@ -115,11 +115,6 @@ final class AuthTokenValidationConfiguration
         DateAndTime::requirePositiveDuration($this->ocspRequestTimeoutSeconds, 'OCSP request timeout');
     }
 
-    public function copy(): AuthTokenValidationConfiguration
-    {
-        return AuthTokenValidationConfiguration::duplicate($this);
-    }
-
     /**
      * Validates that the given URI is an origin URL as defined in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Location/origin">MDN</a>,
      * in the form of <scheme> "://" <hostname> [ ":" <port> ].

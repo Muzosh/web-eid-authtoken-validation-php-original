@@ -10,7 +10,7 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\RequestOptions;
 use Monolog\Logger;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\Response;
+use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspResponseObject;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use RuntimeException;
 use UnexpectedValueException;
@@ -41,7 +41,7 @@ class OcspClientImpl implements OcspClient
         );
     }
 
-    public function request(Uri $uri, string $encodedOcspRequest): Response
+    public function request(Uri $uri, string $encodedOcspRequest): OcspResponseObject
     {
         $request = new Request('POST', $uri, array(
             'Content-Type' => OcspClientImpl::OCSP_REQUEST_TYPE,
@@ -68,6 +68,6 @@ class OcspClientImpl implements OcspClient
             throw new UnexpectedValueException('OCSP response content type is not '.OcspClientImpl::OCSP_RESPONSE_TYPE);
         }
 
-        return new Response($response->getBody()->getContents());
+        return new OcspResponseObject($response->getBody()->getContents());
     }
 }
