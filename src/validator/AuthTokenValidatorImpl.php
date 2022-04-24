@@ -8,6 +8,7 @@ use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\authtoken\WebEidAuthToken;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateDecodingException;
 use muzosh\web_eid_authtoken_validation_php\util\CertStore;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
@@ -23,6 +24,7 @@ use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspServiceProvider;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\AiaOcspServiceConfiguration;
 use phpseclib3\File\X509;
 use Throwable;
+use UnexpectedValueException;
 
 /**
  * Provides the default implementation of AuthTokenValidator.
@@ -40,17 +42,13 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
     // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
     // private CertStore $trustedCACertificateCertStore;
 
-    // OcspClient uses OkHttp internally.
-    // OkHttp performs best when a single OkHttpClient instance is created and reused for all HTTP calls.
-    // This is because each client holds its own connection pool and thread pools.
-    // Reusing connections and threads reduces latency and saves memory.
     private OcspClient $ocspClient;
     private OcspServiceProvider $ocspServiceProvider;
     private AuthTokenSignatureValidator $authTokenSignatureValidator;
 
     public function __construct(AuthTokenValidationConfiguration $configuration)
     {
-        $this->logger = WebEidLogger::getLogger(AuthTokenValidatorImpl::class);
+        $this->logger = WebEidLogger::getLogger(self::class);
 
         // Copy the configuration object to make AuthTokenValidatorImpl immutable and thread-safe.
         $this->configuration = clone $configuration;
@@ -112,30 +110,44 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
 
     private function validateTokenLength(string $authToken): void
     {
-        if (is_null($authToken) || strlen($authToken) < AuthTokenValidatorImpl::TOKEN_MIN_LENGTH) {
+        if (is_null($authToken) || strlen($authToken) < self::TOKEN_MIN_LENGTH) {
             throw new AuthTokenParseException('Auth token is null or too short');
         }
-        if (strlen($authToken) > AuthTokenValidatorImpl::TOKEN_MAX_LENGTH) {
+        if (strlen($authToken) > self::TOKEN_MAX_LENGTH) {
             throw new AuthTokenParseException('Auth token is too long');
         }
     }
 
     private function parseToken(string $authToken): WebEidAuthToken
     {
-        return new WebEidAuthToken($authToken);
+        try {
+            $token = new WebEidAuthToken($authToken);
+            if (is_null($token)) {
+                throw new AuthTokenParseException('Web eID authentication token is null');
+            }
+
+            return $token;
+        } catch (UnexpectedValueException $e) {
+            throw new AuthTokenParseException('Error parsing Web eID authentication token', $e);
+        }
     }
 
     private function validateToken(WebEidAuthToken $token, string $currentChallengeNonce): X509
     {
-        if (is_null($token->getFormat()) || 0 !== strpos($token->getFormat(), AuthTokenValidator::CURRENT_TOKEN_FORMAT_VERSION)) {
-            throw new AuthTokenParseException("Only token format version '".AuthTokenValidator::CURRENT_TOKEN_FORMAT_VERSION."' is currently supported");
+        if (is_null($token->getFormat()) || 0 !== strpos($token->getFormat(), self::CURRENT_TOKEN_FORMAT_VERSION)) {
+            throw new AuthTokenParseException("Only token format version '".self::CURRENT_TOKEN_FORMAT_VERSION."' is currently supported");
         }
         $unverifiedCertificate = $token->getUnverifiedCertificate();
 
         if (is_null($unverifiedCertificate) || empty($unverifiedCertificate)) {
             throw new AuthTokenParseException("'unverifiedCertificate' field is missing, null or empty");
         }
-        $subjectCertificate = new X509($unverifiedCertificate);
+        $subjectCertificate = new X509();
+        $result = $subjectCertificate->loadX509($unverifiedCertificate);
+
+        if (!$result) {
+            throw new CertificateDecodingException('Could not decode certificate: '.$unverifiedCertificate);
+        }
 
         $this->subjectCertificateValidators->executeFor($subjectCertificate);
         $this->getCertTrustValidators()->executeFor($subjectCertificate);
@@ -173,10 +185,14 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
             $certTrustedValidator
         );
 
-        $validatorBatch->addOptional(
-            $this->configuration->isUserCertificateRevocationCheckWithOcspEnabled(),
-            new SubjectCertificateNotRevokedValidator($certTrustedValidator, $this->ocspClient, $this->ocspServiceProvider)
-        );
+        // this if needs to be here because PHP does not like using uninitialized ocspClient and
+        // ocspServiceProvider even if it is not used because of condition in addOptional
+        if ($this->configuration->isUserCertificateRevocationCheckWithOcspEnabled()) {
+            $validatorBatch->addOptional(
+                $this->configuration->isUserCertificateRevocationCheckWithOcspEnabled(),
+                new SubjectCertificateNotRevokedValidator($certTrustedValidator, $this->ocspClient, $this->ocspServiceProvider)
+            );
+        }
 
         return $validatorBatch;
     }

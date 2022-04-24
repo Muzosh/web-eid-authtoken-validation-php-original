@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\BasicResponseObject;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\maps\OcspOCSPResponseStatus;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspRequestObject;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspUtil;
+use muzosh\web_eid_authtoken_validation_php\ocsp\BasicResponseObject;
+use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspOCSPResponseStatus;
+use muzosh\web_eid_authtoken_validation_php\ocsp\OcspRequestObject;
+use muzosh\web_eid_authtoken_validation_php\ocsp\OcspUtil;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClient;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspRequestBuilder;
@@ -17,22 +17,21 @@ use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspServiceProvider;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\OcspService;
 use phpseclib3\File\ASN1\Maps\Certificate;
 use phpseclib3\File\X509;
-use UnexpectedValueException;
 
 final class SubjectCertificateNotRevokedValidator implements SubjectCertificateValidator
 {
     private static $logger;
 
-    private $trustValidator;
-    private $ocspClient;
-    private $ocspServiceProvider;
+    private SubjectCertificateTrustedValidator $trustValidator;
+    private OcspClient $ocspClient;
+    private OcspServiceProvider $ocspServiceProvider;
 
     public function __construct(
         SubjectCertificateTrustedValidator $trustValidator,
         OcspClient $ocspClient,
         OcspServiceProvider $ocspServiceProvider
     ) {
-        $this->logger = WebEidLogger::getLogger(SubjectCertificateNotRevokedValidator::class);
+        $this->logger = WebEidLogger::getLogger(self::class);
         $this->trustValidator = $trustValidator;
         $this->ocspClient = $ocspClient;
         $this->ocspServiceProvider = $ocspServiceProvider;
@@ -40,10 +39,6 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
 
     public function validate(X509 $subjectCertificate): void
     {
-        if (!isset($this->trustValidator->getSubjectCertificateIssuerCertificate())) {
-            throw new UnexpectedValueException('Certificate issuer is not set. SubjectCertificateTrustedValidator::validate should have been called first.');
-        }
-
         $ocspService = $this->ocspServiceProvider->getService($subjectCertificate);
 
         if (!$ocspService->doesSupportNonce()) {

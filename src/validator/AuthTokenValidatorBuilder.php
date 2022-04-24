@@ -18,7 +18,7 @@ class AuthTokenValidatorBuilder
 
     public function __construct()
     {
-        $this->logger = WebEidLogger::getLogger(AuthTokenValidatorBuilder::class);
+        $this->logger = WebEidLogger::getLogger(self::class);
         $this->configuration = new AuthTokenValidationConfiguration();
     }
 
@@ -92,8 +92,7 @@ class AuthTokenValidatorBuilder
     public function withoutUserCertificateRevocationCheckWithOcsp()
     {
         $this->configuration->setUserCertificateRevocationCheckWithOcspDisabled();
-        $this->logger->warning('User certificate revocation check with OCSP is disabled, ' +
-            'you should turn off the revocation check only in exceptional circumstances');
+        $this->logger->warning('User certificate revocation check with OCSP is disabled, '.'you should turn off the revocation check only in exceptional circumstances');
 
         return $this;
     }
@@ -158,8 +157,6 @@ class AuthTokenValidatorBuilder
      * @throws NullPointerException     when required parameters are null
      * @throws IllegalArgumentException when any parameter is invalid
      * @throws RuntimeException         when JCE configuration is invalid
-     *
-     * @return the configured authentication token validator object
      */
     public function build(): AuthTokenValidator
     {

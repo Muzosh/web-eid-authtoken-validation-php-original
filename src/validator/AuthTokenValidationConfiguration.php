@@ -50,7 +50,7 @@ final class AuthTokenValidationConfiguration
         return $this->siteOrigin;
     }
 
-    public function getTrustedCACertificates(): array
+    public function &getTrustedCACertificates(): array
     {
         return $this->trustedCACertificates;
     }
@@ -107,7 +107,7 @@ final class AuthTokenValidationConfiguration
             throw new InvalidArgumentException('Origin URI must not be null');
         }
 
-        AuthTokenValidationConfiguration::validateIsOriginURL($this->siteOrigin);
+        self::validateIsOriginURL($this->siteOrigin);
 
         if (0 == count($this->trustedCACertificates)) {
             throw new InvalidArgumentException('At least one trusted certificate authority must be provided');

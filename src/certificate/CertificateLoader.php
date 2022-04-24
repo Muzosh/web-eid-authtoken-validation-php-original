@@ -12,23 +12,27 @@ use Throwable;
 final class CertificateLoader
 {
     // TODO: put this into config? maybe use nextpack to create better PHP library skeleton?
-    private const CERTPATH = '../../certs/';
+    public const CERTPATH = __DIR__.'/../../certs';
 
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');
     }
 
-    public static function loadCertificatesFromResources(string ...$resourceNames): array
+    public static function loadCertificatesFromPath(string $certPath, string ...$certificateNames): array
     {
         $caCertificates = array();
-        foreach ($resourceNames as $resourceName) {
+        foreach ($certificateNames as $certificateName) {
             $x509 = new X509();
-            $result = $x509->loadX509(file_get_contents(CertificateLoader::CERTPATH.$resourceName));
+            $test = array(
+                __DIR__,
+                __FILE__,
+            );
+            $result = $x509->loadX509(file_get_contents($certPath.'/'.$certificateName));
             if ($result) {
                 array_push($caCertificates, $x509);
             } else {
-                throw new CertificateDecodingException($resourceName);
+                throw new CertificateDecodingException($certificateName);
             }
         }
 

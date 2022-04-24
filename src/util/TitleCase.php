@@ -7,7 +7,7 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 use BadFunctionCallException;
 
 // TODO: THIS CLASS MIGHT NOT BE USED AT ALL
-// in java it is used only in testing
+// in java it is used only in testing, but handles badly õ
 final class TitleCase
 {
     public function __construct()
@@ -17,6 +17,6 @@ final class TitleCase
 
     public static function toTitleCase(string $input): string
     {
-        return ucwords($input, " \t\r\n\f\v\\-");
+        return ucwords(strtolower($input), " -\t\r\n\f\v\\");
     }
 }

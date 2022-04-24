@@ -22,7 +22,7 @@ final class ChallengeNonceGeneratorImpl implements ChallengeNonceGenerator
 
     public function generateAndStoreNonce(): ChallengeNonce
     {
-        $nonceString = call_user_func($this->secureRandom, $this::NONCE_LENGTH);
+        $nonceString = call_user_func($this->secureRandom, self::NONCE_LENGTH);
         $expirationTime = DateAndTime::utcNow()->add(new DateInterval('PT'.$this->ttlSeconds.'S'));
         $base64Nonce = base64_encode($nonceString);
         $challengeNonce = new ChallengeNonce($base64Nonce, $expirationTime);

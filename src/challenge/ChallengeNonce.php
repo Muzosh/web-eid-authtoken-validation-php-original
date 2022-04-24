@@ -17,12 +17,12 @@ class ChallengeNonce
         $this->expirationTime = $expirationTime;
     }
 
-    public function getBase64EncodedNonce():string
+    public function getBase64EncodedNonce(): string
     {
         return $this->base64EncodedNonce;
     }
 
-    public function getExpirationTime():DateTime
+    public function getExpirationTime(): DateTime
     {
         return $this->expirationTime;
     }

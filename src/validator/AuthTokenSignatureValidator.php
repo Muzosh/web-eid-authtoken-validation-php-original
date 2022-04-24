@@ -9,8 +9,8 @@ use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenSignatureValidationException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNullOrEmptyException;
+use muzosh\web_eid_authtoken_validation_php\ocsp\ASN1Util;
 use muzosh\web_eid_authtoken_validation_php\util\Base64Util;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\ASN1Util;
 use phpseclib3\Crypt\Common\PublicKey;
 
 class AuthTokenSignatureValidator
@@ -23,7 +23,7 @@ class AuthTokenSignatureValidator
         'RS256', 'RS384', 'RS512', // RSASSA-PKCS1-v1_5
     );
 
-    private string $siteOrigin;
+    private Uri $siteOrigin;
 
     public function __construct(Uri $siteOrigin)
     {
@@ -43,7 +43,7 @@ class AuthTokenSignatureValidator
             throw new ChallengeNullOrEmptyException();
         }
 
-        if (!in_array($algorithm, AuthTokenSignatureValidator::ALLOWED_SIGNATURE_ALGORITHMS)) {
+        if (!in_array($algorithm, self::ALLOWED_SIGNATURE_ALGORITHMS)) {
             throw new AuthTokenParseException('Unsupported signature algorithm: '.$algorithm);
         }
 

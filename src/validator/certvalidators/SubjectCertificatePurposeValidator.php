@@ -20,7 +20,7 @@ final class SubjectCertificatePurposeValidator implements SubjectCertificateVali
     public function __construct(
     ) {
         $this->logger = WebEidLogger::getLogger(
-            SubjectCertificatePurposeValidator::class
+            self::class
         );
     }
 
@@ -32,12 +32,12 @@ final class SubjectCertificatePurposeValidator implements SubjectCertificateVali
     public function validate(X509 $subjectCertificate): void
     {
         $usages = $subjectCertificate->getExtension(
-            SubjectCertificatePurposeValidator::EXTENDED_KEY_USAGE
+            self::EXTENDED_KEY_USAGE
         );
         if (!$usages || empty($usages)) {
             throw new UserCertificateMissingPurposeException();
         }
-        if (!in_array(SubjectCertificatePurposeValidator::EXTENDED_CLIENT_AUTHENTICATION, $usages)) {
+        if (!in_array(self::EXTENDED_CLIENT_AUTHENTICATION, $usages)) {
             throw new UserCertificateWrongPurposeException();
         }
         $this->logger->debug('User certificate can be used for client authentication.');
