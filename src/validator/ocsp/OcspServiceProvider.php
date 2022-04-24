@@ -13,7 +13,7 @@ use phpseclib3\File\X509;
 
 class OcspServiceProvider
 {
-    private ?DesignatedOcspServiceConfiguration $designatedOcspService;
+    private ?DesignatedOcspService $designatedOcspService;
     private AiaOcspServiceConfiguration $aiaOcspServiceConfiguration;
 
     public function __construct(?DesignatedOcspServiceConfiguration $designatedOcspServiceConfiguration, AiaOcspServiceConfiguration $aiaOcspServiceConfiguration)

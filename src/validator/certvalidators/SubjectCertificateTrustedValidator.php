@@ -26,7 +26,7 @@ final class SubjectCertificateTrustedValidator implements SubjectCertificateVali
         // CertStore $trustedCACertificateCertStore
     ) {
         $this->logger = WebEidLogger::getLogger(
-            SubjectCertificateTrustedValidator::class
+            self::class
         );
         $this->trustedCACertificateAnchors = $trustedCACertificateAnchors;
         // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#

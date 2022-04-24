@@ -4,35 +4,37 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
+use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\BasicResponseObject;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\maps\OcspOCSPResponseStatus;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspRequestObject;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspUtil;
+use muzosh\web_eid_authtoken_validation_php\ocsp\BasicResponseObject;
+use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspOCSPResponseStatus;
+use muzosh\web_eid_authtoken_validation_php\ocsp\OcspRequestObject;
+use muzosh\web_eid_authtoken_validation_php\ocsp\OcspUtil;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClient;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspRequestBuilder;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspResponseValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspServiceProvider;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\OcspService;
+use phpseclib3\File\ASN1;
 use phpseclib3\File\ASN1\Maps\Certificate;
 use phpseclib3\File\X509;
-use UnexpectedValueException;
+use Throwable;
 
 final class SubjectCertificateNotRevokedValidator implements SubjectCertificateValidator
 {
-    private static $logger;
+    private Logger $logger;
 
-    private $trustValidator;
-    private $ocspClient;
-    private $ocspServiceProvider;
+    private SubjectCertificateTrustedValidator $trustValidator;
+    private OcspClient $ocspClient;
+    private OcspServiceProvider $ocspServiceProvider;
 
     public function __construct(
         SubjectCertificateTrustedValidator $trustValidator,
         OcspClient $ocspClient,
         OcspServiceProvider $ocspServiceProvider
     ) {
-        $this->logger = WebEidLogger::getLogger(SubjectCertificateNotRevokedValidator::class);
+        $this->logger = WebEidLogger::getLogger(self::class);
         $this->trustValidator = $trustValidator;
         $this->ocspClient = $ocspClient;
         $this->ocspServiceProvider = $ocspServiceProvider;
@@ -40,34 +42,34 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
 
     public function validate(X509 $subjectCertificate): void
     {
-        if (!isset($this->trustValidator->getSubjectCertificateIssuerCertificate())) {
-            throw new UnexpectedValueException('Certificate issuer is not set. SubjectCertificateTrustedValidator::validate should have been called first.');
-        }
+        try {
+            $ocspService = $this->ocspServiceProvider->getService($subjectCertificate);
 
-        $ocspService = $this->ocspServiceProvider->getService($subjectCertificate);
+            if (!$ocspService->doesSupportNonce()) {
+                $this->logger->debug('Disabling OCSP nonce extension');
+            }
 
-        if (!$ocspService->doesSupportNonce()) {
-            $this->logger->debug('Disabling OCSP nonce extension');
-        }
+            $certificateId = OcspUtil::getCertificateId($subjectCertificate, $this->trustValidator->getSubjectCertificateIssuerCertificate());
 
-        $certificateId = OcspUtil::getCertificateId($subjectCertificate, $this->trustValidator->getSubjectCertificateIssuerCertificate());
-
-        $request = (new OcspRequestBuilder())
-            ->withCertificateId($certificateId)
-            ->enableOcspNonce($ocspService->doesSupportNonce())
-            ->build()
+            $request = (new OcspRequestBuilder())
+                ->withCertificateId($certificateId)
+                ->enableOcspNonce($ocspService->doesSupportNonce())
+                ->build()
         ;
 
-        $this->logger->debug('Sending OCSP request');
-        $response = $this->ocspClient->request($ocspService->getAccessLocation(), $request->getEncodedDER());
-        if ($response->getStatus() != OcspOCSPResponseStatus::MAP['mapping'][0]) {
-            throw new UserCertificateOCSPCheckFailedException('Response status: '.$response->getStatus());
-        }
+            $this->logger->debug('Sending OCSP request');
+            $response = $this->ocspClient->request($ocspService->getAccessLocation(), $request->getEncodedDER());
+            if ($response->getStatus() != OcspOCSPResponseStatus::MAP['mapping'][0]) {
+                throw new UserCertificateOCSPCheckFailedException('Response status: '.$response->getStatus());
+            }
 
-        $basicResponse = $response->getBasicResponse();
-        $this->verifyOcspResponse($basicResponse, $ocspService, $certificateId);
-        if ($ocspService->doesSupportNonce()) {
-            $this->checkNonce($request, $basicResponse);
+            $basicResponse = $response->getBasicResponse();
+            $this->verifyOcspResponse($basicResponse, $ocspService, $certificateId);
+            if ($ocspService->doesSupportNonce()) {
+                $this->checkNonce($request, $basicResponse);
+            }
+        } catch (Throwable $e) {
+            throw new UserCertificateOCSPCheckFailedException('Check previous exception', $e);
         }
     }
 
@@ -84,7 +86,7 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
 
         // As we sent the request for only a single certificate, we expect only a single response.
         if (1 != count($basicResponse->getResponses())) {
-            throw new UserCertificateOCSPCheckFailedException('OCSP response must contain one response, received '.count($basicResponse->getResponses()).' responses instead.');
+            throw new UserCertificateOCSPCheckFailedException('OCSP response must contain one response, received '.count($basicResponse->getResponses()).' responses instead');
         }
 
         $certStatusResponse = $basicResponse->getResponses()[0];
@@ -101,12 +103,12 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
             throw new UserCertificateOCSPCheckFailedException('OCSP response must contain one responder certificate, received '.count($basicResponse->getCerts()).' certificates instead');
         }
 
-        // we need to re-encode certificate array as there exists some
-        // more loading in X509->loadX509 method, which are not public if loading from array
-        // for example without this the publicKey would not be in PEM format
-        // and X509->getPublicKey() will throw error
+        // We need to re-encode each responder certificate array as there exists some
+        // more loading in X509->loadX509 method, which is not executed when loading just basic array.
+        // For example without this the publicKey would not be in PEM format
+        // and X509->getPublicKey() will throw error.
         $responderCert = new X509();
-        $responderCert->loadX509($basicResponse->getCerts()[0]);
+        $responderCert->loadX509(ASN1::encodeDER($basicResponse->getCerts()[0], Certificate::MAP));
 
         OcspResponseValidator::validateResponseSignature($basicResponse, $responderCert);
 

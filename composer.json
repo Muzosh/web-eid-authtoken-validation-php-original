@@ -1,49 +1,53 @@
 {
-    "name": "muzosh/web_eid_authtoken_validation_php",
-    "type": "library",
-    "description": "Web eID authentication token validation library for PHP",
-    "keywords": [
-        "Muzosh",
-        "web_eid_authtoken_validation_php"
-    ],
-    "homepage": "https://github.com/Muzosh/web-eid-authtoken-validation-php",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Petr Muzikant",
-            "email": "pmuzikant@email.cz",
-            "homepage": "https://github.com/Muzosh",
-            "role": "Developer/MSc student"
-        }
-    ],
-    "require": {
-        "php": ">=7.4",
-        "guzzlehttp/guzzle": "^7.4",
-        "monolog/monolog": "^2.4",
-        "phpseclib/phpseclib": "~3.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit" : ">=8.0"
-    },
-    "autoload": {
-        "psr-4": {
-            "muzosh\\web_eid_authtoken_validation_php\\": "src"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "muzosh\\web_eid_authtoken_validation_php\\": "tests"
-        }
-    },
-    "scripts": {
-        "test": "phpunit"
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0-dev"
-        }
-    },
-    "config": {
-        "sort-packages": true
-    }
+	"name": "muzosh/web_eid_authtoken_validation_php",
+	"type": "library",
+	"description": "Web eID authentication token validation library for PHP",
+	"keywords": [
+		"Muzosh",
+		"web_eid_authtoken_validation_php"
+	],
+	"homepage": "https://github.com/Muzosh/web-eid-authtoken-validation-php",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Petr Muzikant",
+			"email": "pmuzikant@email.cz",
+			"homepage": "https://github.com/Muzosh",
+			"role": "Developer/MSc student"
+		}
+	],
+	"require": {
+		"php": ">=7.4",
+		"guzzlehttp/guzzle": "^7.4",
+		"monolog/monolog": "^2.4",
+		"phpseclib/phpseclib": "~3.0"
+	},
+	"require-dev": {
+		"phpunit/phpunit": ">=8.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"muzosh\\web_eid_authtoken_validation_php\\": "src"
+		},
+		"classmap": [
+			"src/util/TypedArrayUtil.php",
+			"src/util/TrustedCertificates.php"
+		]
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"muzosh\\web_eid_authtoken_validation_php\\": "tests"
+		}
+	},
+	"scripts": {
+		"test": "phpunit"
+	},
+	"extra": {
+		"branch-alias": {
+			"dev-master": "1.0-dev"
+		}
+	},
+	"config": {
+		"sort-packages": true
+	}
 }

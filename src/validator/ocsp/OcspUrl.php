@@ -8,6 +8,7 @@ use BadFunctionCallException;
 use GuzzleHttp\Psr7\Exception\MalformedUriException;
 use GuzzleHttp\Psr7\Uri;
 use phpseclib3\File\X509;
+use Throwable;
 
 final class OcspUrl
 {
@@ -25,18 +26,22 @@ final class OcspUrl
     {
         $authorityInformationAccess = $certificate->getExtension('id-pe-authorityInfoAccess');
 
-        if ($authorityInformationAccess) {
-            foreach ($authorityInformationAccess as $accessDescription) {
-                if ('id-ad-ocsp' === $accessDescription['accessMethod'] && array_key_exists('uniformResourceIdentifier', $accessDescription['accessLocation'])) {
-                    $accessLocationUrl = $accessDescription['accessLocation']['uniformResourceIdentifier'];
+        try {
+            if ($authorityInformationAccess) {
+                foreach ($authorityInformationAccess as $accessDescription) {
+                    if (('id-pkix-ocsp' === $accessDescription['accessMethod'] || 'id-ad-ocsp' === $accessDescription['accessMethod']) && array_key_exists('uniformResourceIdentifier', $accessDescription['accessLocation'])) {
+                        $accessLocationUrl = $accessDescription['accessLocation']['uniformResourceIdentifier'];
 
-                    try {
-                        return new Uri($accessLocationUrl);
-                    } catch (MalformedUriException $e) {
-                        throw new MalformedUriException("OCSP Uri from certificate '".$certificate->getSubjectDN(X509::DN_STRING)."' is invalid", -1, $e);
+                        try {
+                            return new Uri($accessLocationUrl);
+                        } catch (MalformedUriException $e) {
+                            throw new MalformedUriException("OCSP Uri from certificate '".$certificate->getSubjectDN(X509::DN_STRING)."' is invalid", -1, $e);
+                        }
                     }
                 }
             }
+        } catch (Throwable $e) {
+            return null;
         }
 
         return null;

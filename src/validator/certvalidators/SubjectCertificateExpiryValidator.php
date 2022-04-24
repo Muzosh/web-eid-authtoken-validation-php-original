@@ -18,7 +18,7 @@ final class SubjectCertificateExpiryValidator implements SubjectCertificateValid
 
     public function __construct(TrustedAnchors $trustedCACertificateAnchors)
     {
-        $this->logger = WebEidLogger::getLogger(SubjectCertificateExpiryValidator::class);
+        $this->logger = WebEidLogger::getLogger(self::class);
         $this->trustedCACertificateAnchors = $trustedCACertificateAnchors;
     }
 

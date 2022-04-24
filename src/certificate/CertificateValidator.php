@@ -9,7 +9,6 @@ use DateTime;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
-use muzosh\web_eid_authtoken_validation_php\util\CertStore;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
 use phpseclib3\File\X509;
 
@@ -36,7 +35,7 @@ final class CertificateValidator
     public static function trustedCACertificatesAreValidOnDate(TrustedAnchors $trustedCACertificateAnchors, DateTime $date): void
     {
         foreach ($trustedCACertificateAnchors->getCertificates() as $cert) {
-            CertificateValidator::certificateIsValidOnDate($cert, $date, 'Trusted CA');
+            self::certificateIsValidOnDate($cert, $date, 'Trusted CA');
         }
     }
 
@@ -55,7 +54,9 @@ final class CertificateValidator
         // $certificate->disableURLFetch();
 
         if ($certificate->validateSignature()) {
-            return end($certificate->getChain());
+            $chain = $certificate->getChain();
+
+            return end($chain);
         }
 
         throw new CertificateNotTrustedException($certificate);

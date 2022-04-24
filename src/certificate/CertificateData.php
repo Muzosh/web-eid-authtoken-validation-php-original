@@ -32,7 +32,7 @@ final class CertificateData
      */
     public static function getSubjectCN(X509 $certificate): string
     {
-        return CertificateData::getSubjectField($certificate, 'id-at-commonName');
+        return self::getSubjectField($certificate, 'id-at-commonName');
     }
 
     /**
@@ -42,7 +42,7 @@ final class CertificateData
      */
     public static function getSubjectSurname(X509 $certificate): string
     {
-        return CertificateData::getSubjectField($certificate, 'id-at-surname');
+        return self::getSubjectField($certificate, 'id-at-surname');
     }
 
     /**
@@ -52,7 +52,7 @@ final class CertificateData
      */
     public static function getSubjectGivenName(X509 $certificate): string
     {
-        return CertificateData::getSubjectField($certificate, 'id-at-givenName');
+        return self::getSubjectField($certificate, 'id-at-givenName');
     }
 
     /**
@@ -62,7 +62,7 @@ final class CertificateData
      */
     public static function getSubjectIdCode(X509 $certificate): string
     {
-        return CertificateData::getSubjectField($certificate, 'id-at-serialNumber');
+        return self::getSubjectField($certificate, 'id-at-serialNumber');
     }
 
     /**
@@ -72,11 +72,11 @@ final class CertificateData
      */
     public static function getSubjectCountryCode(X509 $certificate): string
     {
-        return CertificateData::getSubjectField($certificate, 'id-at-countryName');
+        return self::getSubjectField($certificate, 'id-at-countryName');
     }
 
     /**
-     * CertificateData::getSubjectField.
+     * self::getSubjectField.
      *
      * @param mixed $certificate
      * @param mixed $fieldIdentifier

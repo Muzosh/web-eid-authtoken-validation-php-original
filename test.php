@@ -7,28 +7,15 @@ namespace muzosh\web_eid_authtoken_validation_php\certificate;
 use DateInterval;
 use DateTime;
 use DateTimeZone;
-use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Uri;
-use GuzzleHttp\RequestOptions;
-use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
-use muzosh\web_eid_authtoken_validation_php\util\Base64Util;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\ASN1Util;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\maps\OcspBasicOcspResponse;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\maps\OcspOCSPRequest;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\maps\OcspOCSPResponse;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\maps\OcspOCSPResponseStatus;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspUtil;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspRequestObject;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\OcspResponseObject;
-use muzosh\web_eid_authtoken_validation_php\util\UriUniqueArray;
-use muzosh\web_eid_authtoken_validation_php\validator\AuthTokenValidationConfiguration;
-use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClientImpl;
-use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspRequestBuilder;
+use muzosh\web_eid_authtoken_validation_php\authtoken\WebEidAuthToken;
+use muzosh\web_eid_authtoken_validation_php\testutil\AuthTokenValidators;
+use muzosh\web_eid_authtoken_validation_php\util\TitleCase;
 use phpseclib3\File\ASN1;
-use phpseclib3\File\ASN1\Maps\Certificate;
 use phpseclib3\File\X509;
 
 include './src/util/Logger.php';
+include './src/util/TrustedCertificates.php';
 
 foreach (glob('src/util/OCSP/Maps/*.php') as $filename) {
     include $filename;
@@ -58,12 +45,23 @@ $tokenEc = json_decode('{"algorithm":"ES384",'.
     '"signature":"tbMTrZD4CKUj6atjNCHZruIeyPFAEJk2htziQ1t08BSTyA5wKKqmNmzsJ7562hWQ6+tJd6nlidHGE5jVVJRKmPtNv3f9gbT2b7RXcD4t5Pjn8eUCBCA4IX99Af32Z5ln",'.
     '"format":"web-eid:1"}');
 
+const AUTH_TOKEN = '{"algorithm":"ES384",' .
+	'"unverifiedCertificate":"MIIEAzCCA2WgAwIBAgIQHWbVWxCkcYxbzz9nBzGrDzAKBggqhkjOPQQDBDBgMQswCQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRhDA5OVFJFRS0xMDc0NzAxMzEbMBkGA1UEAwwSVEVTVCBvZiBFU1RFSUQyMDE4MB4XDTE4MTAyMzE1MzM1OVoXDTIzMTAyMjIxNTk1OVowfzELMAkGA1UEBhMCRUUxKjAoBgNVBAMMIUrDlUVPUkcsSkFBSy1LUklTVEpBTiwzODAwMTA4NTcxODEQMA4GA1UEBAwHSsOVRU9SRzEWMBQGA1UEKgwNSkFBSy1LUklTVEpBTjEaMBgGA1UEBRMRUE5PRUUtMzgwMDEwODU3MTgwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAQ/u+9IncarVpgrACN6aRgUiT9lWC9H7llnxoEXe8xoCI982Md8YuJsVfRdeG5jwVfXe0N6KkHLFRARspst8qnACULkqFNat/Kj+XRwJ2UANeJ3Gl5XBr+tnLNuDf/UiR6jggHDMIIBvzAJBgNVHRMEAjAAMA4GA1UdDwEB/wQEAwIDiDBHBgNVHSAEQDA+MDIGCysGAQQBg5EhAQIBMCMwIQYIKwYBBQUHAgEWFWh0dHBzOi8vd3d3LnNrLmVlL0NQUzAIBgYEAI96AQIwHwYDVR0RBBgwFoEUMzgwMDEwODU3MThAZWVzdGkuZWUwHQYDVR0OBBYEFOTddHnA9rJtbLwhBNyn0xZTQGCMMGEGCCsGAQUFBwEDBFUwUzBRBgYEAI5GAQUwRzBFFj9odHRwczovL3NrLmVlL2VuL3JlcG9zaXRvcnkvY29uZGl0aW9ucy1mb3ItdXNlLW9mLWNlcnRpZmljYXRlcy8TAkVOMCAGA1UdJQEB/wQWMBQGCCsGAQUFBwMCBggrBgEFBQcDBDAfBgNVHSMEGDAWgBTAhJkpxE6fOwI09pnhClYACCk+ezBzBggrBgEFBQcBAQRnMGUwLAYIKwYBBQUHMAGGIGh0dHA6Ly9haWEuZGVtby5zay5lZS9lc3RlaWQyMDE4MDUGCCsGAQUFBzAChilodHRwOi8vYy5zay5lZS9UZXN0X29mX0VTVEVJRDIwMTguZGVyLmNydDAKBggqhkjOPQQDBAOBiwAwgYcCQgHYElkX4vn821JR41akI/lpexCnJFUf4GiOMbTfzAxpZma333R8LNrmI4zbzDp03hvMTzH49g1jcbGnaCcbboS8DAJBObenUp++L5VqldHwKAps61nM4V+TiLqD0jILnTzl+pV+LexNL3uGzUfvvDNLHnF9t6ygi8+Bsjsu3iHHyM1haKM=",' .
+	'"appVersion":"https://web-eid.eu/web-eid-app/releases/2.0.0+0",' .
+	'"signature":"tbMTrZD4CKUj6atjNCHZruIeyPFAEJk2htziQ1t08BSTyA5wKKqmNmzsJ7562hWQ6+tJd6nlidHGE5jVVJRKmPtNv3f9gbT2b7RXcD4t5Pjn8eUCBCA4IX99Af32Z5ln",' .
+	'"format":"web-eid:1"}';
+const VALID_CHALLENGE_NONCE = '12345678123456781234567812345678912356789123';
+
+$uri =new Uri('https:///ria.ee');
+
 $token = $tokenEc;
 
 $cert = new X509();
 $cert->loadX509($certificate);
 // $cert->saveX509($cert->getCurrentCert(), X509::FORMAT_DER);
 $cert->loadCA(file_get_contents('./certs/TEST_of_ESTEID2018.cer'));
+
+$token = new WebEidAuthToken(json_encode($tokenEc));
 // $x509->saveX509($x509->getCurrentCert(), X509::FORMAT_DER);
 // $x501 = new X509();
 // $x501->loadX509(file_get_contents('./certs/ESTEID2018.cer'));
@@ -94,34 +92,34 @@ $response = array(48, -126, 6, 39, 10, 1, 0, -96, -126, 6, 32, 48, -126, 6, 28, 
 
 // signature = [-78, 48, 9, -66, 52, 37, -25, 23, 76, -96, -116, -20, -111, 118, 16, 13, 67, 111, -84, 1, -120, -28, 47, -94, -11, -9, 31, 66, -112, -104, 27, -37, 78, 96, -34, -114, 39, 69, 103, -126, 46, -84, -125, 60, -74, -3, 40, 62, 80, 24, -88, 43, -119, 57, -71, 7, 49, 79, -48, -113, 9, -62, -44, -42, -73, 56, -7, 92, 72, 117, 100, -63, 71, 116, -113, 5, 98, 18, -61, 107, -36, -89, 25, -49, -125, -109, 79, -84, -29, 76, 20, 26, 121, -78, -108, -58, -94, -78, 69, -24, -65, -119, -7, -1, 49, -82, -89, -89, -118, -117, -27, 85, -39, 17, 111, -71, 93, -26, -95, 67, 62, 41, 13, -106, 66, 24, -115, -97, -97, -69, 120, -6, -13, -93, 12, 111, 20, 118, -90, 113, 3, 71, -44, 125, -70, -66, 107, -25, 19, -9, -9, -15, 105, 85, 119, -41, 12, -113, -46, -5, 42, 31, -44, -118, -76, 4, -1, 37, -63, 76, -71, 7, -56, 49, -18, 29, 48, 74, 47, -8, 73, 113, 109, -120, 71, 75, 92, -14, 52, -93, 31, 2, -111, 28, 6, -60, 103, 48, -72, -17, -96, -82, 29, -22, -43, 16, -106, 126, -94, 40, -60, 19, -121, -72, 65, 12, -120, 25, 32, 88, 65, -111, -80, 110, -4, -56, 78, -44, 109, 117, -89, -30, -3, 101, 100, -99, 42, 28, 47, 39, 29, 106, -99, 107, 124, -45, -78, -42, -38, 29, 60, 76, 78, 113, 56, 47]
 
-ASN1::loadOIDs(array(
-    'id-pkix-ocsp-nonce' => '1.3.6.1.5.5.7.48.1.2',
-    'id-sha1' => '1.3.14.3.2.26',
-    'qcStatements(3)' => '1.3.6.1.5.5.7.1.3',
-    'street' => '2.5.4.9',
-    'id-pkix-ocsp-basic' => '1.3.6.1.5.5.7.48.1.1',
-    'id-pkix-ocsp' => '1.3.6.1.5.5.7.48.1',
-    'secp384r1' => '1.3.132.0.34',
-));
+// ASN1::loadOIDs(array(
+//     'id-pkix-ocsp-nonce' => '1.3.6.1.5.5.7.48.1.2',
+//     'id-sha1' => '1.3.14.3.2.26',
+//     'qcStatements(3)' => '1.3.6.1.5.5.7.1.3',
+//     'street' => '2.5.4.9',
+//     'id-pkix-ocsp-basic' => '1.3.6.1.5.5.7.48.1.1',
+//     'id-pkix-ocsp' => '1.3.6.1.5.5.7.48.1',
+//     'secp384r1' => '1.3.132.0.34',
+// ));
 
 // OCSP request
-$decodedRequest = ASN1::decodeBER(pack('c*', ...$request));
+// $decodedRequest = ASN1::decodeBER(pack('c*', ...$request));
 
-$mappedRequest = ASN1::asn1map($decodedRequest[0], OcspOCSPRequest::MAP);
+// $mappedRequest = ASN1::asn1map($decodedRequest[0], OcspOCSPRequest::MAP);
 
-// need to specify filters for TYPE_ANY values before encoding DER
-$encodedRequest = ASN1::encodeDER($mappedRequest, OcspOCSPRequest::MAP);
+// // need to specify filters for TYPE_ANY values before encoding DER
+// $encodedRequest = ASN1::encodeDER($mappedRequest, OcspOCSPRequest::MAP);
 
-// OCSP response
-$decodedResponse = ASN1::decodeBER(pack('c*', ...$response));
+// // OCSP response
+// $decodedResponse = ASN1::decodeBER(pack('c*', ...$response));
 
-$mappedResponse = ASN1::asn1map($decodedResponse[0], OcspOCSPResponse::MAP, array('response' => function ($encoded) {
-    return ASN1::asn1map(ASN1::decodeBER($encoded)[0], OcspBasicOcspResponse::MAP);
-}));
+// $mappedResponse = ASN1::asn1map($decodedResponse[0], OcspOCSPResponse::MAP, array('response' => function ($encoded) {
+//     return ASN1::asn1map(ASN1::decodeBER($encoded)[0], OcspBasicOcspResponse::MAP);
+// }));
 
-$encodedResponse = ASN1::encodeDER($mappedResponse, OcspOCSPResponse::MAP, array('response' => function ($source) {
-    return ASN1::encodeDER($source, OcspBasicOcspResponse::MAP);
-}));
+// $encodedResponse = ASN1::encodeDER($mappedResponse, OcspOCSPResponse::MAP, array('response' => function ($source) {
+//     return ASN1::encodeDER($source, OcspBasicOcspResponse::MAP);
+// }));
 
 // $result = $x509->loadCA(file_get_contents('./certs/TEST_of_ESTEID-SK_2015.cer'));
 // $result = $x509->loadCA(file_get_contents('./certs/TEST_of_ESTEID2018.cer'));
@@ -131,48 +129,48 @@ $encodedResponse = ASN1::encodeDER($mappedResponse, OcspOCSPResponse::MAP, array
 
 // sha256WithRSAEncryption
 
-$ocspClient = OcspClientImpl::build(5);
+// $ocspClient = OcspClientImpl::build(5);
 
-$certificateId = OcspUtil::getCertificateId($cert, $cert->getChain()[0]);
+// $certificateId = OcspUtil::getCertificateId($cert, $cert->getChain()[0]);
 
-$request = (new OcspRequestBuilder())->withCertificateId($certificateId)->enableOcspNonce(true)
-    ->build()
-;
-$nonce = $request->getNonceExtension();
+// $request = (new OcspRequestBuilder())->withCertificateId($certificateId)->enableOcspNonce(true)
+//     ->build()
+// ;
+// $nonce = $request->getNonceExtension();
 
-$response = $ocspClient->request(new Uri('http://aia.demo.sk.ee/esteid2018'), $request->getEncodedDER());
-if ($response->getStatus() != OcspOCSPResponseStatus::MAP['mapping'][0]) {
-    throw new UserCertificateOCSPCheckFailedException('Response status: '.$response->getStatus());
-}
+// $response = $ocspClient->request(new Uri('http://aia.demo.sk.ee/esteid2018'), $request->getEncodedDER());
+// if ($response->getStatus() != OcspOCSPResponseStatus::MAP['mapping'][0]) {
+//     throw new UserCertificateOCSPCheckFailedException('Response status: '.$response->getStatus());
+// }
 
-$basicResponse = $response->getBasicResponse();
+// $basicResponse = $response->getBasicResponse();
 
-$x555 = new X509();
-$x555->loadX509($basicResponse->getCerts()[0]);
-$publicKey = $x555->getPublicKey()->withHash('sha256');
-
-
-$encoded = $basicResponse->getEncodedResponseData();
-$signature = $basicResponse->getSignature();
-$a = $publicKey->verify($encoded, $signature);
+// $x555 = new X509();
+// $x555->loadX509($basicResponse->getCerts()[0]);
+// $publicKey = $x555->getPublicKey()->withHash('sha256');
 
 
-$producedAt = $basicResponse->getProducedAt();
-$velid = new AuthTokenValidationConfiguration();
+// $encoded = $basicResponse->getEncodedResponseData();
+// $signature = $basicResponse->getSignature();
+// $a = $publicKey->verify($encoded, $signature);
 
-$uri = $cert->validateURL('http://aia.demo.sk.ee/esteid2018');
 
-// SIGNATURE TESTING
-$originHash = hash('sha384', $tokenOrigin, true);
-$nonceHash = hash('sha384', $tokenNonce, true);
-$concatSignedFields = $originHash.$nonceHash;
-$publicKey = $cert->getPublicKey()->withHash('sha384');
+// $producedAt = $basicResponse->getProducedAt();
+// $velid = new AuthTokenValidationConfiguration();
 
-// $publicKey = openssl_pkey_get_public(openssl_x509_read($certificate));
-$signatureDer = ASN1Util::transcodeSignatureToDER(Base64Util::decodeBase64ToArray($token->signature));
-// $foo = openssl_verify($concatSignedFields, $seclib['signature'], $publicKey, OPENSSL_ALGO_SHA384);
+// $uri = $cert->validateURL('http://aia.demo.sk.ee/esteid2018');
 
-$test = $publicKey->verify($concatSignedFields, pack('c*', ...$signatureDer));
+// // SIGNATURE TESTING
+// $originHash = hash('sha384', $tokenOrigin, true);
+// $nonceHash = hash('sha384', $tokenNonce, true);
+// $concatSignedFields = $originHash.$nonceHash;
+// $publicKey = $cert->getPublicKey()->withHash('sha384');
+
+// // $publicKey = openssl_pkey_get_public(openssl_x509_read($certificate));
+// $signatureDer = ASN1Util::transcodeSignatureToDER(Base64Util::decodeBase64ToArray($token->signature));
+// // $foo = openssl_verify($concatSignedFields, $seclib['signature'], $publicKey, OPENSSL_ALGO_SHA384);
+
+// $test = $publicKey->verify($concatSignedFields, pack('c*', ...$signatureDer));
 // $test = $publicKey->verify($concatSignedFields, base64_decode($token->signature, true)); // works with RS256
 
 // $x510 = clone $x509;
@@ -188,12 +186,12 @@ $test = $publicKey->verify($concatSignedFields, pack('c*', ...$signatureDer));
 // URI TESTING
 
 
-$uri1 = new Uri("www.google.com");
-$uri2 = new Uri("www.seznam.com");
-$uri3 = new Uri("www.facenbook.com");
-$uri4 = new Uri("www.agrewaf.com");
+// $uri1 = new Uri("www.google.com");
+// $uri2 = new Uri("www.seznam.com");
+// $uri3 = new Uri("www.facenbook.com");
+// $uri4 = new Uri("www.agrewaf.com");
 
-$a = new UriUniqueArray($uri1, $uri2, $uri3, $uri4);
+// $a = new UriUniqueArray($uri1, $uri2, $uri3, $uri4);
 // $uri = new Uri('httpfqewdfqs:/qwefq/ufqfri.qwefthephple1#$!%#!)aqwefgue.coqfqm:45/');
 // $uri2 = new Uri('https://uri.thephpleague.com/');
 // $uri3 = new Uri('https://uri.thephpleague.com:43/');
@@ -247,6 +245,12 @@ $a = new UriUniqueArray($uri1, $uri2, $uri3, $uri4);
 // ucwords(strtolower($openssl['subject']['GN']), '\-');
 
 // DATE TIME TESTING
+$dt = new DateTime("Thursday, August 26, 2021 5:46:40 PM");
+$test = ASN1::decodeBER(pack('c*', ...[4, 64, 48, 62, 48, 50, 6, 11, 43, 6, 1, 4, 1, -125, -111, 33, 1, 2, 1, 48,
+35, 48, 33, 6, 8, 43, 6, 1, 5, 5, 7, 2, 1, 22, 21, 104, 116, 116, 112, 115,
+58, 47, 47, 119, 119, 119, 46, 115, 107, 46, 101, 101, 47, 67, 80, 83, 48,
+8, 6, 6, 4, 0, -113, 122, 1, 2]));
+
 $dt = new DateTime('now', new DateTimeZone('Europe/Prague'));
 
 $seconds = 600.0;

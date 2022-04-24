@@ -10,8 +10,8 @@ use DateTime;
 use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateRevokedException;
+use muzosh\web_eid_authtoken_validation_php\ocsp\BasicResponseObject;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
-use muzosh\web_eid_authtoken_validation_php\util\ocsp\BasicResponseObject;
 use phpseclib3\File\X509;
 
 final class OcspResponseValidator
@@ -33,7 +33,7 @@ final class OcspResponseValidator
 
     public static function validateHasSigningExtension(X509 $certificate): void
     {
-        if (!$certificate->getExtension('id-ce-extKeyUsage') || !in_array(OcspResponseValidator::OCSP_SIGNING, $certificate->getExtension('id-ce-extKeyUsage'))) {
+        if (!$certificate->getExtension('id-ce-extKeyUsage') || !in_array(self::OCSP_SIGNING, $certificate->getExtension('id-ce-extKeyUsage'))) {
             throw new OCSPCertificateException('Certificate '.$certificate->getSubjectDN(X509::DN_STRING).
                 ' does not contain the key usage extension for OCSP response signing');
         }
@@ -63,16 +63,14 @@ final class OcspResponseValidator
         //   SHOULD be considered unreliable.
         //   If nextUpdate is not set, the responder is indicating that newer
         //   revocation information is available all the time.
-        $notAllowedBefore = (clone $producedAt)->sub(new DateInterval('PT'.OcspResponseValidator::ALLOWED_TIME_SKEW_SECONDS.'S'));
-        $notAllowedAfter = (clone $producedAt)->add(new DateInterval('PT'.OcspResponseValidator::ALLOWED_TIME_SKEW_SECONDS.'S'));
+        $notAllowedBefore = (clone $producedAt)->sub(new DateInterval('PT'.self::ALLOWED_TIME_SKEW_SECONDS.'S'));
+        $notAllowedAfter = (clone $producedAt)->add(new DateInterval('PT'.self::ALLOWED_TIME_SKEW_SECONDS.'S'));
 
         $thisUpdate = new DateTime($certStatusResponse['thisUpdate']);
         $nextUpdate = isset($certStatusResponse['nextUpdate']) ? new DateTime($certStatusResponse['nextUpdate']) : null;
 
         if ($notAllowedAfter < $thisUpdate
-            || $notAllowedBefore > !is_null($nextUpdate) ?
-            $nextUpdate :
-                $thisUpdate) {
+            || $notAllowedBefore > (!is_null($nextUpdate) ? $nextUpdate : $thisUpdate)) {
             throw new UserCertificateOCSPCheckFailedException('Certificate status update time check failed: '.
                 'notAllowedBefore: '.DateAndTime::toUtcString($notAllowedBefore).
                 ', notAllowedAfter: '.DateAndTime::toUtcString($notAllowedAfter).

@@ -19,8 +19,8 @@ final class AuthTokenValidationConfiguration
 {
     private bool $isUserCertificateRevocationCheckWithOcspEnabled = true;
     private int $ocspRequestTimeoutSeconds = 5;
-    private Uri $siteOrigin;
-    private DesignatedOcspServiceConfiguration $designatedOcspServiceConfiguration;
+    private ?Uri $siteOrigin = null;
+    private ?DesignatedOcspServiceConfiguration $designatedOcspServiceConfiguration = null;
 
     private array $trustedCACertificates = array();
     private array $disallowedSubjectCertificatePolicyIds;
@@ -45,12 +45,12 @@ final class AuthTokenValidationConfiguration
         $this->siteOrigin = $siteOrigin;
     }
 
-    public function getSiteOrigin(): Uri
+    public function getSiteOrigin(): ?Uri
     {
         return $this->siteOrigin;
     }
 
-    public function getTrustedCACertificates(): array
+    public function &getTrustedCACertificates(): array
     {
         return $this->trustedCACertificates;
     }
@@ -75,7 +75,7 @@ final class AuthTokenValidationConfiguration
         $this->ocspRequestTimeoutSeconds = $ocspRequestTimeoutSeconds;
     }
 
-    public function getDesignatedOcspServiceConfiguration(): DesignatedOcspServiceConfiguration
+    public function getDesignatedOcspServiceConfiguration(): ?DesignatedOcspServiceConfiguration
     {
         return $this->designatedOcspServiceConfiguration;
     }
@@ -85,7 +85,7 @@ final class AuthTokenValidationConfiguration
         $this->designatedOcspServiceConfiguration = $designatedOcspServiceConfiguration;
     }
 
-    public function getDisallowedSubjectCertificatePolicyIds(): array
+    public function &getDisallowedSubjectCertificatePolicyIds(): array
     {
         return $this->disallowedSubjectCertificatePolicyIds;
     }
@@ -107,7 +107,7 @@ final class AuthTokenValidationConfiguration
             throw new InvalidArgumentException('Origin URI must not be null');
         }
 
-        AuthTokenValidationConfiguration::validateIsOriginURL($this->siteOrigin);
+        self::validateIsOriginURL($this->siteOrigin);
 
         if (0 == count($this->trustedCACertificates)) {
             throw new InvalidArgumentException('At least one trusted certificate authority must be provided');

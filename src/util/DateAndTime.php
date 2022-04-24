@@ -28,15 +28,20 @@ final class DateAndTime
         }
     }
 
-    public static function toUtcString(DateTime $date): string
+    public static function toUtcString(?DateTime $date): string
     {
+		if (is_null($date)){
+			return "null";
+		}
         return ((clone $date)->setTimezone(new DateTimeZone('UTC')))->format('Y-m-d H:i:s e');
     }
 }
 
 final class DefaultClock
 {
-    private static $instance;
+    private static DefaultClock $instance;
+
+    private DateTime $mockedClock;
 
     public static function getInstance()
     {
@@ -49,7 +54,22 @@ final class DefaultClock
 
     public function now(): DateTime
     {
-        // Specify date.timezone value in php.ini for correct timezone
+        if (isset($this->mockedClock)) {
+            return $this->mockedClock;
+        }
+
         return new DateTime();
+    }
+
+    // used for unit testing
+    public function setMockedClock(DateTime $mockedClock): void
+    {
+        $this->mockedClock = $mockedClock;
+    }
+
+    // used for unit testing
+    public function resetMockedClock(): void
+    {
+        unset($this->mockedClock);
     }
 }

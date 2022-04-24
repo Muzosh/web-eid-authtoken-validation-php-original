@@ -12,7 +12,7 @@ class AiaOcspServiceConfiguration
 {
     private UriUniqueArray $nonceDisabledOcspUrls;
     private TrustedAnchors $trustedCACertificateAnchors;
-	// CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
     // private $trustedCACertificateCertStore;
 
     public function __construct(UriUniqueArray $nonceDisabledOcspUrls, TrustedAnchors $trustedCACertificateAnchors)// , CertStore $trustedCACertificateCertStore)
