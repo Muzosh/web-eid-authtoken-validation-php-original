@@ -29,7 +29,7 @@ final class OcspUrl
         try {
             if ($authorityInformationAccess) {
                 foreach ($authorityInformationAccess as $accessDescription) {
-                    if ('id-ad-ocsp' === $accessDescription['accessMethod'] && array_key_exists('uniformResourceIdentifier', $accessDescription['accessLocation'])) {
+                    if (('id-pkix-ocsp' === $accessDescription['accessMethod'] || 'id-ad-ocsp' === $accessDescription['accessMethod']) && array_key_exists('uniformResourceIdentifier', $accessDescription['accessLocation'])) {
                         $accessLocationUrl = $accessDescription['accessLocation']['uniformResourceIdentifier'];
 
                         try {

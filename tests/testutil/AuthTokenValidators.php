@@ -40,7 +40,7 @@ final class AuthTokenValidators
     {
         return self::getAuthTokenValidator(
             self::TOKEN_ORIGIN_URL,
-            ...CertificateLoader::loadCertificatesFromPath(CertificateLoader::CERTPATH, 'ESTEID2018.cer')
+            ...CertificateLoader::loadCertificatesFromPath(__DIR__.'/../_resources', 'ESTEID2018.cer')
         );
     }
 

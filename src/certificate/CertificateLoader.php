@@ -24,10 +24,6 @@ final class CertificateLoader
         $caCertificates = array();
         foreach ($certificateNames as $certificateName) {
             $x509 = new X509();
-            $test = array(
-                __DIR__,
-                __FILE__,
-            );
             $result = $x509->loadX509(file_get_contents($certPath.'/'.$certificateName));
             if ($result) {
                 array_push($caCertificates, $x509);

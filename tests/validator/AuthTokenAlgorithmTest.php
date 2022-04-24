@@ -15,7 +15,6 @@ class AuthTokenAlgorithmTest extends AbstractTestWithValidator
 {
     public function testWhenAlgorithmNoneThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $authToken = $this->replaceTokenField(self::VALID_AUTH_TOKEN, 'ES384', 'NONE');
 
         $this->expectException(AuthTokenParseException::class);
@@ -25,7 +24,6 @@ class AuthTokenAlgorithmTest extends AbstractTestWithValidator
 
     public function testWhenAlgorithmEmptyThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $authToken = $this->replaceTokenField(self::VALID_AUTH_TOKEN, 'ES384', '');
 
         $this->expectException(AuthTokenParseException::class);
@@ -35,7 +33,6 @@ class AuthTokenAlgorithmTest extends AbstractTestWithValidator
 
     public function testWhenAlgorithmInvalidThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $authToken = $this->replaceTokenField(self::VALID_AUTH_TOKEN, 'ES384', '\\u0000\\t\\ninvalid');
 
         $this->expectException(AuthTokenParseException::class);

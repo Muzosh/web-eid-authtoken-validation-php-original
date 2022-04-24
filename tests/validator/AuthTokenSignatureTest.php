@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateData;
+use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenSignatureValidationException;
 use muzosh\web_eid_authtoken_validation_php\testutil\AbstractTestWithValidator;
 use muzosh\web_eid_authtoken_validation_php\testutil\AuthTokenValidators;
 
@@ -32,7 +33,6 @@ class AuthTokenSignatureTest extends AbstractTestWithValidator
 
     public function testWhenValidTokenAndWrongChallengeNonceThenValidationFails()
     {
-        $this->expectNotToPerformAssertions();
         $invalidChallengeNonce = '12345678123456781234567812345678912356789124';
 
         $this->expectException(AuthTokenSignatureValidationException::class);
@@ -41,7 +41,6 @@ class AuthTokenSignatureTest extends AbstractTestWithValidator
 
     public function testWhenValidTokenAndWrongOriginThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $authTokenValidator = AuthTokenValidators::getAuthTokenValidator('https://invalid.org');
 
         $this->expectException(AuthTokenSignatureValidationException::class);
@@ -50,7 +49,6 @@ class AuthTokenSignatureTest extends AbstractTestWithValidator
 
     public function testWhenTokenWithWrongCertThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $authTokenValidator = AuthTokenValidators::getAuthTokenValidator();
         $authTokenWithWrongCert = $authTokenValidator->parse(self::AUTH_TOKEN_WRONG_CERT);
 

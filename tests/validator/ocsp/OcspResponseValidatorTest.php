@@ -16,8 +16,6 @@ class OcspResponseValidatorTest extends TestCase
 {
     public function testWhenThisUpdateDayBeforeProducedAtThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         // yyyy-MM-dd'T'HH:mm:ss.SSSZ
         $mockResponse = array(
             'thisUpdate' => '2021-09-01T00:00:00.000Z',
@@ -36,35 +34,31 @@ class OcspResponseValidatorTest extends TestCase
 
     public function testWhenThisUpdateDayAfterProducedAtThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         // yyyy-MM-dd'T'HH:mm:ss.SSSZ
         $mockResponse = array(
-            'thisUpdate' => '2021-09-02',
+            'thisUpdate' => '2021-09-02T00:00:00.000Z',
         );
-        $producedAt = new DateTime('2021-09-01');
+        $producedAt = new DateTime('2021-09-01T00:00:00.000Z');
 
         $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        $this->expectExceptionMessage('User certificate revocation check has failed: '
-        .'Certificate status update time check failed: '
-        .'notAllowedBefore: 2021-08-31 23:45:00 UTC, '
-        .'notAllowedAfter: 2021-09-01 00:15:00 UTC, '
-        .'thisUpdate: 2021-09-02 00:00:00 UTC, '
-        .'nextUpdate: null');
+        $this->expectExceptionMessage("User certificate revocation check has failed: "
+		. "Certificate status update time check failed: "
+		. "notAllowedBefore: 2021-08-31 23:45:00 UTC, "
+		. "notAllowedAfter: 2021-09-01 00:15:00 UTC, "
+		. "thisUpdate: 2021-09-02 00:00:00 UTC, "
+		. "nextUpdate: null");
 
         OcspResponseValidator::validateCertificateStatusUpdateTime($mockResponse, $producedAt);
     }
 
     public function testWhenNextUpdateDayBeforeProducedAtThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         // yyyy-MM-dd'T'HH:mm:ss.SSSZ
         $mockResponse = array(
-            'thisUpdate' => '2021-09-02',
-            'nextUpdate' => '2021-09-01',
+            'thisUpdate' => '2021-09-02T00:00:00.000Z',
+            'nextUpdate' => '2021-09-01T00:00:00.000Z',
         );
-        $producedAt = new DateTime('2021-09-02');
+        $producedAt = new DateTime('2021-09-02T00:00:00.000Z');
 
         $this->expectException(UserCertificateOCSPCheckFailedException::class);
         $this->expectExceptionMessage('User certificate revocation check has failed: '

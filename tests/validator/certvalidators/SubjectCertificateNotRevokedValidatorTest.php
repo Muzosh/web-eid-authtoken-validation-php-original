@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator\certValidators;
 
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
-use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspOCSPResponseStatus;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateRevokedException;
+use muzosh\web_eid_authtoken_validation_php\ocsp\ASN1Util;
 use muzosh\web_eid_authtoken_validation_php\ocsp\OcspResponseObject;
 use muzosh\web_eid_authtoken_validation_php\testutil\Certificates;
 use muzosh\web_eid_authtoken_validation_php\testutil\OcspServiceMaker;
@@ -16,6 +21,8 @@ use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClientImpl;
 use phpseclib3\File\X509;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
+use RuntimeException;
+use UnexpectedValueException;
 
 /**
  * @internal
@@ -36,6 +43,7 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
 
     protected function setUp(): void
     {
+        ASN1Util::loadOIDs();
         $this->trustedValidator = new SubjectCertificateTrustedValidator(new TrustedAnchors(array()));
         self::setSubjectCertificateIssuerCertificate($this->trustedValidator);
         $this->estEid2018Cert = Certificates::getJaakKristjanEsteid2018Cert();
@@ -45,7 +53,7 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingClient($this->ocspClient);
+        $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingClient(self::$ocspClient);
         $validator->validate($this->estEid2018Cert);
     }
 
@@ -54,7 +62,7 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         $ocspServiceProvider = OcspServiceMaker::getDesignatedOcspServiceProvider();
-        $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, $this->ocspClient, $ocspServiceProvider);
+        $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, self::$ocspClient, $ocspServiceProvider);
         $validator->validate($this->estEid2018Cert);
     }
 
@@ -63,221 +71,254 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         $ocspServiceProvider = OcspServiceMaker::getDesignatedOcspServiceProvider(false);
-        $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, $this->ocspClient, $ocspServiceProvider);
+        $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, self::$ocspClient, $ocspServiceProvider);
         $validator->validate($this->estEid2018Cert);
     }
 
     public function testWhenOcspUrlIsInvalidThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $ocspServiceProvider = OcspServiceMaker::getDesignatedOcspServiceProvider(true, 'http://invalid.invalid');
-        $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, $this->ocspClient, $ocspServiceProvider);
+        $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, self::$ocspClient, $ocspServiceProvider);
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX")
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
 
-        // assertThatCode(() ->
-        //     )
-        //     .isInstanceOf(UserCertificateOCSPCheckFailedException.class)
-        //     .getCause()
-        //     .isInstanceOf(IOException.class)
-        //     .hasMessageMatching("invalid.invalid: (Name or service not known|"
-        //         + "Temporary failure in name resolution)");
+            $this->expectException(ConnectException::class);
+            $this->expectExceptionMessage('Could not resolve host: invalid.invalid');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspRequestFailsThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-        $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        $this->expectExceptionMessage('OCSP request was not successful, response: http/');
-
         $ocspServiceProvider = OcspServiceMaker::getDesignatedOcspServiceProvider(true, 'https://web-eid-test.free.beeceptor.com');
-        $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, $this->ocspClient, $ocspServiceProvider);
+        $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, self::$ocspClient, $ocspServiceProvider);
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX")
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(ClientException::class);
+            $this->expectExceptionMessage('Client error: `POST https://web-eid-test.free.beeceptor.com` resulted in a `404 Not Found` response:');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspRequestHasInvalidBodyThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse('invalid')
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UnexpectedValueException::class);
+            $this->expectExceptionMessage('Could not decode OCSP response. Base64 encoded response: aW52YWxpZA==');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseIsNotSuccessfulThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::buildOcspResponseBodyWithInternalErrorStatus()
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UnexpectedValueException::class);
+            $this->expectExceptionMessage('Could not decode OCSP response. Base64 encoded response: MIIGJwoCAKCCBiAwggYcBgkrBgEFBQcwA');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseHasInvalidCertificateIdThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::buildOcspResponseBodyWithInvalidCertificateId()
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateOCSPCheckFailedException::class);
+            $this->expectExceptionMessage('User certificate revocation check has failed: OCSP responded with certificate ID that differs from the requested ID');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseHasInvalidSignatureThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::buildOcspResponseBodyWithInvalidSignature()
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateOCSPCheckFailedException::class);
+            $this->expectExceptionMessage('User certificate revocation check has failed: OCSP response signature is invalid');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseHasInvalidResponderCertThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::buildOcspResponseBodyWithInvalidResponderCert()
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('Unable to perform ASN1 mapping');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseHasInvalidTagThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::buildOcspResponseBodyWithInvalidTag()
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UnexpectedValueException::class);
+            $this->expectExceptionMessage('Could not decode OcspResponse->responseBytes->responseType');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseHas2CertResponsesThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::getOcspResponseBytesFromResources('ocsp_response_with_2_responses.der')
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateOCSPCheckFailedException::class);
+            $this->expectExceptionMessage('User certificate revocation check has failed: OCSP response must contain one response, received 2 responses instead');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseHas2ResponderCertsThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-        // $this->markTestSkipped('It is difficult to make Python and Java CertId equal, needs more work');
+        $this->markTestSkipped('It is difficult to make Python and Java CertId equal, needs more work');
 
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::getOcspResponseBytesFromResources('ocsp_response_with_2_responder_certs.der')
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateOCSPCheckFailedException::class);
+            $this->expectExceptionMessage('User certificate revocation check has failed: OCSP response must contain one response, received 2 certificates instead');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseRevokedThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::getOcspResponseBytesFromResources('ocsp_response_revoked.der')
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateRevokedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateRevokedException::class);
+            $this->expectExceptionMessage('User certificate has been revoked: Revocation reason: unspecified');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseUnknownThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $ocspServiceProvider = OcspServiceMaker::getDesignatedOcspServiceProvider(true, 'https://web-eid-test.free.beeceptor.com');
         $response = self::getResponse(
             pack(
-                'c+',
+                'c*',
                 ...self::getOcspResponseBytesFromResources('ocsp_response_unknown.der')
             )
         );
@@ -297,55 +338,70 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
 
         $validator = new SubjectCertificateNotRevokedValidator($this->trustedValidator, $client, $ocspServiceProvider);
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateRevokedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateRevokedException::class);
+            $this->expectExceptionMessage('User certificate has been revoked: Unknown status');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenOcspResponseCANotTrustedThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::getOcspResponseBytesFromResources('ocsp_response_unknown.der')
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(CertificateNotTrustedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(CertificateNotTrustedException::class);
+            $this->expectExceptionMessage('Certificate C=EE, O=AS Sertifitseerimiskeskus, OU=OCSP, CN=TEST of SK OCSP RESPONDER 2020/emailAddress=pki@sk.ee is not trusted');
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenNonceDiffersThenThrows(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $validator = self::getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(
             self::getResponse(
                 pack(
-                    'c+',
+                    'c*',
                     ...self::getOcspResponseBytesFromResources()
                 )
             )
         );
 
-        // TODO: try to read the message here
-        // $this->expectException(UserCertificateOCSPCheckFailedException::class);
-        // $this->expectExceptionMessage("XXX");
-        $result = $validator->validate($this->estEid2018Cert);
+        try {
+            $validator->validate($this->estEid2018Cert);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateOCSPCheckFailedException::class);
+            $this->expectExceptionMessage('OCSP request and response nonces differ, possible replay attack');
+
+            throw $e->getPrevious();
+        }
     }
 
     private static function buildOcspResponseBodyWithInternalErrorStatus(): array
     {
         $ocspResponseBytes = self::getOcspResponseBytesFromResources();
         $status_offset = 6;
-        $ocspResponseBytes[$status_offset] = OcspOCSPResponseStatus::MAP['internalError'];
+        // 2 = internal error
+        $ocspResponseBytes[$status_offset] = 2;
 
         return $ocspResponseBytes;
     }
@@ -363,7 +419,7 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
     {
         $ocspResponseBytes = self::getOcspResponseBytesFromResources();
         $signature_offset = 349;
-        $ocspResponseBytes[$signature_offset + 5] = 0x01;
+        $ocspResponseBytes[$signature_offset + 5 + 1] = 0x01;
 
         return $ocspResponseBytes;
     }
@@ -391,7 +447,7 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
     // and https://gist.github.com/mrts/bb0dcf93a2b9d2458eab1f9642ee97b2.
     private static function getOcspResponseBytesFromResources(string $resource = 'ocsp_response.der'): array
     {
-        return unpack('c*', file_get_contents('../../_resources/'.$resource));
+        return unpack('c*', file_get_contents(__DIR__.'/../../_resources/'.$resource));
     }
 
     private function getSubjectCertificateNotRevokedValidatorWithAiaOcspUsingResponse(Response $response): SubjectCertificateNotRevokedValidator
@@ -420,7 +476,7 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
 
     private static function setSubjectCertificateIssuerCertificate(SubjectCertificateTrustedValidator $trustedValidator): void
     {
-        $reflector = new ReflectionProperty('SubjectCertificateTrustedValidator', 'subjectCertificateIssuerCertificate');
+        $reflector = new ReflectionProperty(SubjectCertificateTrustedValidator::class, 'subjectCertificateIssuerCertificate');
         $reflector->setAccessible(true);
         $reflector->setValue($trustedValidator, Certificates::getTestEsteid2018CA());
     }

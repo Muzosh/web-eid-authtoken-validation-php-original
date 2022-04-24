@@ -72,7 +72,8 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
                 new AiaOcspServiceConfiguration(
                     $configuration->getNonceDisabledOcspUrls(),
                     $this->trustedCACertificateAnchors,
-                    $this->trustedCACertificateCertStore
+					// CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
+                    //$this->trustedCACertificateCertStore
                 )
             );
         }
@@ -89,7 +90,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
 
             return $this->parseToken($authToken);
         } catch (Throwable $e) {
-            $this->logger->warning('Token parsing was interrupted: '.print_r($e));
+            $this->logger->warning('Token parsing was interrupted: '.strval($e));
 
             throw $e;
         }
@@ -102,7 +103,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         try {
             return $this->validateToken($authToken, $currentChallengeNonce);
         } catch (Throwable $e) {
-            $this->logger->warning('Token validation was interrupted: '.print_r($e));
+            $this->logger->warning('Token validation was interrupted: '.strval($e));
 
             throw $e;
         }

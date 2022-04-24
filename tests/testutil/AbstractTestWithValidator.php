@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\testutil;
 
 use muzosh\web_eid_authtoken_validation_php\authtoken\WebEidAuthToken;
+use muzosh\web_eid_authtoken_validation_php\ocsp\ASN1Util;
 use muzosh\web_eid_authtoken_validation_php\validator\AuthTokenValidator;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -30,6 +31,8 @@ abstract class AbstractTestWithValidator extends TestCase
         } catch (Throwable $e) {
             throw new RuntimeException('Error occured while setting up', -1, $e);
         }
+
+		ASN1Util::loadOIDs();
     }
 
     protected function replaceTokenField(string $token, string $field, string $value): WebEidAuthToken

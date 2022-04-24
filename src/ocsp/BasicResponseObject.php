@@ -61,11 +61,13 @@ class BasicResponseObject
 
     public function getNonceExtension(): string
     {
+		// TODO: name is again hard-coded, the should be some mechanism implemented
+		// this needs better knowledge of possible values and OIDs
         return current(
             array_filter(
                 $this->ocspBasicResponse['tbsResponseData']['responseExtensions'],
                 function ($extension) {
-                    return ASN1Util::ID_PKIX_OCSP_NONCE == $extension['extnId'];
+                    return ASN1Util::ID_PKIX_OCSP_NONCE == $extension['extnId'] || 'id-pkix-ocsp-nonce' == $extension['extnId'];
                 }
             )
         )['extnValue'];

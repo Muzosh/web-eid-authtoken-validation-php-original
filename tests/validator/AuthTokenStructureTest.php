@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
+use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
 use muzosh\web_eid_authtoken_validation_php\testutil\AbstractTestWithValidator;
 
 /**
@@ -23,8 +24,6 @@ class AuthTokenStructureTest extends AbstractTestWithValidator
 
     public function testWhenNullStrTokenThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $this->expectException(AuthTokenParseException::class);
         $this->expectExceptionMessage('Auth token is null or too short');
         $this->validator->parse('null');
@@ -32,8 +31,6 @@ class AuthTokenStructureTest extends AbstractTestWithValidator
 
     public function testWhenTokenTooShortThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $this->expectException(AuthTokenParseException::class);
         $this->expectExceptionMessage('Auth token is null or too short');
         $this->validator->parse(str_repeat('1', 99));
@@ -41,17 +38,13 @@ class AuthTokenStructureTest extends AbstractTestWithValidator
 
     public function testWhenTokenTooLongThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $this->expectException(AuthTokenParseException::class);
         $this->expectExceptionMessage('Auth token is too long');
         $this->validator->parse(str_repeat('1', 10001));
     }
 
     public function testWhenUnknownTokenVersionThenParsingFails(): void
-    {
-        $this->expectNotToPerformAssertions();
-        $token = $this->replaceTokenField(self::VALID_AUTH_TOKEN, 'web-eid:1', 'invalid');
+    {   $token = $this->replaceTokenField(self::VALID_AUTH_TOKEN, 'web-eid:1', 'invalid');
 
         $this->expectException(AuthTokenParseException::class);
         $this->expectExceptionMessage("Only token format version 'web-eid:1' is currently supported");

@@ -6,9 +6,19 @@ namespace muzosh\web_eid_authtoken_validation_php\validator;
 
 use DateTime;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateDecodingException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateDisallowedPolicyException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateMissingPurposeException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateRevokedException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateWrongPurposeException;
 use muzosh\web_eid_authtoken_validation_php\testutil\AbstractTestWithValidator;
 use muzosh\web_eid_authtoken_validation_php\testutil\AuthTokenValidators;
 use muzosh\web_eid_authtoken_validation_php\testutil\Dates;
+use UnexpectedValueException;
 
 /**
  * @internal
@@ -46,7 +56,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateFieldIsMissingThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, '"unverifiedCertificate":"X5C",', '');
 
         $this->expectException(AuthTokenParseException::class);
@@ -56,7 +65,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateFieldIsEmptyThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', '');
 
         $this->expectException(AuthTokenParseException::class);
@@ -66,10 +74,8 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateFieldIsArrayThenParsingFails(): void
     {
-        $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', '[1,2,3,4]');
-
         try {
-            $this->validator->validate($token, self::VALID_CHALLENGE_NONCE);
+            $this->replaceTokenField(self::AUTH_TOKEN, '"X5C"', '[1,2,3,4]');
         } catch (AuthTokenParseException $e) {
             $this->assertEquals('Error parsing Web eID authentication token', $e->getMessage());
 
@@ -82,10 +88,8 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateFieldIsNumberThenParsingFails(): void
     {
-        $token = $this->replaceTokenField(self::AUTH_TOKEN, '"X5C"', '1234');
-
         try {
-            $this->validator->validate($token, self::VALID_CHALLENGE_NONCE);
+            $this->replaceTokenField(self::AUTH_TOKEN, '"X5C"', '1234');
         } catch (AuthTokenParseException $e) {
             $this->assertEquals('Error parsing Web eID authentication token', $e->getMessage());
 
@@ -98,7 +102,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateFieldIsNotBase64ThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', 'This is not a certificate');
 
         $this->expectException(CertificateDecodingException::class);
@@ -108,7 +111,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateFieldIsNotCertificateThenParsingFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', 'VGhpcyBpcyBub3QgYSBjZXJ0aWZpY2F0ZQ');
 
         $this->expectException(CertificateDecodingException::class);
@@ -118,7 +120,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificatePurposeIsMissingThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::MISSING_PURPOSE_CERT);
 
         $this->expectException(UserCertificateMissingPurposeException::class);
@@ -127,7 +128,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificatePurposeIsWrongThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::WRONG_PURPOSE_CERT);
 
         $this->expectException(UserCertificateWrongPurposeException::class);
@@ -136,7 +136,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificatePolicyIsWrongThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::WRONG_POLICY_CERT);
 
         $this->expectException(UserCertificateDisallowedPolicyException::class);
@@ -145,7 +144,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificatePolicyIsDisallowedThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $validatorWithDisallowedESTEIDPolicy = AuthTokenValidators::getAuthTokenValidatorWithDisallowedESTEIDPolicy();
 
         $this->expectException(UserCertificateDisallowedPolicyException::class);
@@ -154,7 +152,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenUsingOldMobileIdCertificateThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::OLD_MOBILE_ID_CERT);
 
         $this->expectException(UserCertificateDisallowedPolicyException::class);
@@ -163,7 +160,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenUsingNewMobileIdCertificateThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::NEW_MOBILE_ID_CERT);
 
         $this->expectException(UserCertificateMissingPurposeException::class);
@@ -172,7 +168,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateIsExpiredRsaThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::EXPIRED_RSA_CERT);
 
         $this->expectException(CertificateExpiredException::class);
@@ -182,7 +177,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateIsExpiredEcdsaThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::EXPIRED_ECDSA_CERT);
 
         $this->expectException(CertificateExpiredException::class);
@@ -200,7 +194,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenUserCertificateIsNotYetValidThenValidationFails()
     {
-        $this->expectNotToPerformAssertions();
         $this->mockDate('2018-10-17');
 
         $this->expectException(CertificateNotYetValidException::class);
@@ -209,7 +202,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenTrustedCACertificateIsNotYetValidThenValidationFails()
     {
-        $this->expectNotToPerformAssertions();
         $this->mockDate('2018-08-17');
 
         $this->expectException(CertificateNotYetValidException::class);
@@ -218,7 +210,6 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenUserCertificateIsNoLongerValidThenValidationFails()
     {
-        $this->expectNotToPerformAssertions();
         $this->mockDate('2024-10-19');
 
         $this->expectException(CertificateExpiredException::class);
@@ -228,45 +219,57 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenTrustedCACertificateIsNoLongerValidThenValidationFails()
     {
-        $this->expectNotToPerformAssertions();
         $this->mockDate('2033-10-19');
 
         $this->expectException(CertificateExpiredException::class);
-        $this->expectExceptionMessage('CertificateExpiredException');
+        $this->expectExceptionMessage('Trusted CA certificate has expired');
         $this->validator->validate($this->validAuthToken, self::VALID_CHALLENGE_NONCE);
     }
 
     public function testWhenCertificateIsRevokedThenOcspCheckFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $this->mockDate('2020-01-01');
 
         $validatorWithOcspCheck = AuthTokenValidators::getAuthTokenValidatorWithOcspCheck();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::REVOKED_CERT);
 
         $this->expectException(UserCertificateRevokedException::class);
-        $this->validator->validate($this->validAuthToken, self::VALID_CHALLENGE_NONCE);
+
+        try {
+            $validatorWithOcspCheck->validate($token, self::VALID_CHALLENGE_NONCE);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateRevokedException::class);
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenCertificateIsRevokedThenOcspCheckWithDesignatedOcspServiceFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $this->mockDate('2020-01-01');
 
         $validatorWithOcspCheck = AuthTokenValidators::getAuthTokenValidatorWithDesignatedOcspCheck();
         $token = $this->replaceTokenField(self::AUTH_TOKEN, 'X5C', self::REVOKED_CERT);
 
-        $this->expectException(UserCertificateRevokedException::class);
-        $this->validator->validate($this->validAuthToken, self::VALID_CHALLENGE_NONCE);
+        try {
+            $validatorWithOcspCheck->validate($token, self::VALID_CHALLENGE_NONCE);
+        } catch (UserCertificateOCSPCheckFailedException $e) {
+            $this->assertEquals('User certificate revocation check has failed: Check previous exception', $e->getMessage());
+
+            $this->expectException(UserCertificateRevokedException::class);
+
+            throw $e->getPrevious();
+        }
     }
 
     public function testWhenCertificateCaIsNotPartOfTrustChainThenValidationFails(): void
     {
-        $this->expectNotToPerformAssertions();
         $validatorWithWrongTrustedCA = AuthTokenValidators::getAuthTokenValidatorWithWrongTrustedCA();
 
         $this->expectException(CertificateNotTrustedException::class);
-        $this->validator->validate($this->validAuthToken, self::VALID_CHALLENGE_NONCE);
+        $validatorWithWrongTrustedCA->validate($this->validAuthToken, self::VALID_CHALLENGE_NONCE);
     }
 
     private function mockDate(string $date)

@@ -70,9 +70,7 @@ final class OcspResponseValidator
         $nextUpdate = isset($certStatusResponse['nextUpdate']) ? new DateTime($certStatusResponse['nextUpdate']) : null;
 
         if ($notAllowedAfter < $thisUpdate
-            || $notAllowedBefore > !is_null($nextUpdate) ?
-            $nextUpdate :
-                $thisUpdate) {
+            || $notAllowedBefore > (!is_null($nextUpdate) ? $nextUpdate : $thisUpdate)) {
             throw new UserCertificateOCSPCheckFailedException('Certificate status update time check failed: '.
                 'notAllowedBefore: '.DateAndTime::toUtcString($notAllowedBefore).
                 ', notAllowedAfter: '.DateAndTime::toUtcString($notAllowedAfter).

@@ -48,11 +48,7 @@ class OcspClientImpl implements OcspClient
             'charset' => 'utf-8',
         ), $encodedOcspRequest);
 
-        try {
-            $response = $this->httpClient->send($request);
-        } catch (RequestException $e) {
-            throw new RuntimeException('OCSP request was not successful.', -1, $e);
-        }
+		$response = $this->httpClient->send($request);
 
         $statusCode = $response->getStatusCode();
 
