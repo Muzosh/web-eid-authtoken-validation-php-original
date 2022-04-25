@@ -15,7 +15,7 @@ abstract class ChallengeNonceStore
 {
     abstract public function put(ChallengeNonce $challengeNonce): void;
 
-    abstract public function getAndRemoveImpl(): ?ChallengeNonce;
+    abstract protected function getAndRemoveImpl(): ?ChallengeNonce;
 
     public function getAndRemove(): ChallengeNonce
     {
