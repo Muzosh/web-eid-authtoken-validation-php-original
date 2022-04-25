@@ -15,16 +15,18 @@ class Certificates
     private static ?X509 $testEsteid2018CA = null;
     private static ?X509 $testEsteid2015CA = null;
     private static ?X509 $testSkOcspResponder2020 = null;
+    private static ?X509 $testEsteid2018CAGov = null;
 
     private static ?X509 $jaakKristjanEsteid2018Cert = null;
     private static ?X509 $mariliisEsteid2015Cert = null;
 
     public static function loadCertificates(): void
     {
-        $certificates = CertificateLoader::loadCertificatesFromPath(__DIR__.'/../_resources', 'TEST_of_ESTEID-SK_2015.cer', 'TEST_of_ESTEID2018.cer', 'TEST_of_SK_OCSP_RESPONDER_2020.cer');
+        $certificates = CertificateLoader::loadCertificatesFromPath(__DIR__.'/../_resources', 'TEST_of_ESTEID-SK_2015.cer', 'TEST_of_ESTEID2018.cer', 'TEST_of_SK_OCSP_RESPONDER_2020.cer','TEST_of_EE-GovCA2018.crt');
         self::$testEsteid2015CA = $certificates[0];
         self::$testEsteid2018CA = $certificates[1];
         self::$testSkOcspResponder2020 = $certificates[2];
+        self::$testEsteid2018CAGov = $certificates[3];
     }
 
     public static function getTestEsteid2018CA(): X509
@@ -34,6 +36,15 @@ class Certificates
         }
 
         return self::$testEsteid2018CA;
+    }
+
+    public static function getTestEsteid2018CAGov(): X509
+    {
+        if (null == self::$testEsteid2018CAGov) {
+            self::loadCertificates();
+        }
+
+        return self::$testEsteid2018CAGov;
     }
 
     public static function getTestEsteid2015CA(): X509

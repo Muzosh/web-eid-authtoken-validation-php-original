@@ -6,6 +6,7 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp;
 
 use DateTime;
 use GuzzleHttp\Psr7\Uri;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\testutil\Certificates;
 use muzosh\web_eid_authtoken_validation_php\testutil\OcspServiceMaker;
@@ -34,7 +35,11 @@ class OcspServiceProviderTest extends TestCase
 
     public function testWhenAiaOcspServiceConfigurationProvidedThenCreatesAiaOcspService(): void
     {
-		$this->markTestSkipped('This test will not work because getJaakKristjanEsteid2018Cert returns certificate, which has "TEST of EE-GovCA2018" listed as issuers common name. Everything else looks fine, but trusted certificate have "TEST of ESTEID2018" as common name. Java probably does not check common name');
+		// Had to add TEST_of_EE-GovCA2018.pem.crt
+		// to trusted certificates in order to validate responder certificate.
+		// TODO: find out why Java library is OK without them
+
+		// responder certificate issuer is in trusted certificates:
         $ocspServiceProvider = OcspServiceMaker::getAiaOcspServiceProvider();
         $service2018 = $ocspServiceProvider->getService(Certificates::getJaakKristjanEsteid2018Cert());
 
@@ -43,10 +48,13 @@ class OcspServiceProviderTest extends TestCase
 
         $service2018->validateResponderCertificate(Certificates::getTestEsteid2018CA(), new DateTime('Thursday, August 26, 2021 5:46:40 PM'));
 
+		// responder certificate issuer is NOT in trusted certificates:
         $service2015 = $ocspServiceProvider->getService(Certificates::getMariliisEsteid2015Cert());
         $this->assertEquals($service2015->getAccessLocation(), new Uri('http://aia.demo.sk.ee/esteid2015'));
         $this->assertFalse($service2015->doesSupportNonce());
 
+		$this->expectException(CertificateNotTrustedException::class);
+		$this->expectExceptionMessage("Certificate C=EE, O=AS Sertifitseerimiskeskus/2.5.4.97=NTREE-10747013, CN=TEST of ESTEID-SK 2015 is not trusted");
         $service2015->validateResponderCertificate(Certificates::getTestEsteid2015CA(), new DateTime('Thursday, August 26, 2021 5:46:40 PM'));
     }
 
