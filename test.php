@@ -14,9 +14,6 @@ use muzosh\web_eid_authtoken_validation_php\util\TitleCase;
 use phpseclib3\File\ASN1;
 use phpseclib3\File\X509;
 
-include './src/util/Logger.php';
-include './src/util/TrustedCertificates.php';
-
 foreach (glob('src/util/OCSP/Maps/*.php') as $filename) {
     include $filename;
 }
@@ -52,7 +49,7 @@ const AUTH_TOKEN = '{"algorithm":"ES384",' .
 	'"format":"web-eid:1"}';
 const VALID_CHALLENGE_NONCE = '12345678123456781234567812345678912356789123';
 
-$uri =new Uri('https:///ria.ee');
+$uri =new Uri('https://ria.ee');
 
 $token = $tokenEc;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace muzosh\web_eid_authtoken_validation_php\validator\certValidators;
+namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
