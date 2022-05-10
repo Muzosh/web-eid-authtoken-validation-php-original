@@ -12,6 +12,8 @@ use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNullOrEmptyExcep
 use muzosh\web_eid_authtoken_validation_php\ocsp\ASN1Util;
 use muzosh\web_eid_authtoken_validation_php\util\Base64Util;
 use phpseclib3\Crypt\Common\PublicKey;
+use phpseclib3\File\ASN1;
+use phpseclib3\File\ASN1\Maps\DssSigValue;
 
 class AuthTokenSignatureValidator
 {
@@ -47,13 +49,13 @@ class AuthTokenSignatureValidator
             throw new AuthTokenParseException('Unsupported signature algorithm: '.$algorithm);
         }
 
-        // Note that in case of ECDSA, the eID card outputs raw R||S, so we need to trascode it to DER.
-        if ('ES' == substr($algorithm, 0, 2)) {
-            $transcodedBytes = ASN1Util::transcodeSignatureToDER(Base64Util::decodeBase64ToArray($signature));
+        $decodedSignature = base64_decode($signature);
 
+        // Note that in case of ECDSA, some eID cards output raw R||S, so we need to trascode it to DER
+        // Second condition actually checks, whether it is possible to map into DssSigValue (sequence with two integers)
+        if ('ES' == substr($algorithm, 0, 2) && !ASN1::asn1map($decodedSignature, DssSigValue::MAP)) {
+            $transcodedBytes = ASN1Util::transcodeSignatureToDER(Base64Util::decodeBase64ToArray($signature));
             $decodedSignature = pack('c*', ...$transcodedBytes);
-        } else {
-            $decodedSignature = base64_decode($signature);
         }
 
         $hashAlg = $this->hashAlgorithmForName($algorithm);

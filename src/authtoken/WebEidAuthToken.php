@@ -15,9 +15,9 @@ class WebEidAuthToken
 
     public function __construct(string $json)
     {
-        // TODO: maybe use some library for json loading?
+        // TODO: maybe use some library for json loading? however works fine right now
         // this constructing process is written in order to be compatible with tests
-        // i.e. checking for array
+        // i.e. checking for array and integers
         $jsonDecoded = json_decode($json, true);
         $classAttritutes = get_class_vars(self::class);
 

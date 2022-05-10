@@ -29,7 +29,8 @@ use Countable;
 //     }
 // }
 
-// TODO: can be maybe changed for define(currentClass::class . "CONST_NAME", EXPRESSION) for nonmalluable variable instead of object with private property?
+// can be maybe changed for define(currentClass::class . "CONST_NAME", EXPRESSION) for nonmalluable variable instead of object with private property?
+// currently it works fine with this object, no need to define it as constant
 final class TrustedAnchors implements Countable
 {
     private X509UniqueArray $certificates;

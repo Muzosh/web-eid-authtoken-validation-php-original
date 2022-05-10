@@ -44,8 +44,8 @@ class BasicResponseObject
 
     public function getSignatureAlgorithm(): string
     {
-        // ! works only for SHA and known OIDs
-        // TODO: definitely needs some other approach
+        // ! currently works only for SHA and known OIDs
+        // TODO: definitely needs some other more robust approach
         // example input: sha256WithRSAEncryption
         $algorithm = strtolower($this->ocspBasicResponse['signatureAlgorithm']['algorithm']);
 
@@ -61,7 +61,7 @@ class BasicResponseObject
 
     public function getNonceExtension(): string
     {
-		// TODO: name is again hard-coded, the should be some mechanism implemented
+		// TODO: name is again hard-coded, there should be some better mechanism implemented
 		// this needs better knowledge of possible values and OIDs
         return current(
             array_filter(

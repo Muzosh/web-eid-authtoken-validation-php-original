@@ -37,7 +37,7 @@ class OcspServiceProviderTest extends TestCase
     {
 		// Had to add TEST_of_EE-GovCA2018.pem.crt
 		// to trusted certificates in order to validate responder certificate.
-		// TODO: find out why Java library is OK without them
+		// TODO: find out why Java test counterpart is OK without them
 
 		// responder certificate issuer is in trusted certificates:
         $ocspServiceProvider = OcspServiceMaker::getAiaOcspServiceProvider();

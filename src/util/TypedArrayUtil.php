@@ -15,13 +15,14 @@ use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCert
 use phpseclib3\File\X509;
 use TypeError;
 
-/* TODO: what is the best way of ensuring typed array?
-    // https://www.cloudsavvyit.com/10040/approaches-to-creating-typed-arrays-in-php/
-    A) ignore and use arrays
+/* what is the best way of ensuring typed array in PHP?
+    https://www.cloudsavvyit.com/10040/approaches-to-creating-typed-arrays-in-php/
+    A) ignore and use regular arrays - not really solving the problem
     B) Variadic Arguments - only once per function
-    C) Collection classes <==
+    C) Collection classes <== this code implements this option
 
-    in case i need more array functions https://gist.github.com/MightyPork/5ad28f208f046a24831c
+    in needed more array functions, here is good example
+    https://gist.github.com/MightyPork/5ad28f208f046a24831c
     */
 abstract class TypedArray implements Countable, ArrayAccess, IteratorAggregate
 {
@@ -29,7 +30,8 @@ abstract class TypedArray implements Countable, ArrayAccess, IteratorAggregate
 
     abstract public function __construct();
 
-    // possible to call array_ functions on this, but does not work with array_push
+    // this method makes it possible to call array_XX PHP functions on this object,
+    // but does not work with array_push, we it is not currently needed
     // public function __call($func, $argv)
     // {
     //     if (!is_callable($func) || 'array_' !== substr(strval($func), 0, 6)) {
@@ -142,7 +144,7 @@ final class X509UniqueArray extends X509Array
         $this->checkInstance($value);
 
         if (in_array($value, $this->array, true)) {
-            // TODO: maybe do nothing instead of throwing exception?
+            // TODO: maybe do nothing instead of throwing exception? depends on function usage
             throw new InvalidArgumentException('This object already is in the array.');
         }
 
@@ -171,7 +173,7 @@ final class UriUniqueArray extends TypedArray
         $this->checkInstance($value);
 
         if (in_array($value, $this->array, true)) {
-            // TODO: maybe do nothing instead of throwing exception?
+            // TODO: maybe do nothing instead of throwing exception? depends on function usage
             throw new InvalidArgumentException('This object already is in the array.');
         }
 

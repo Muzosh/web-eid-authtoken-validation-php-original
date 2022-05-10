@@ -9,7 +9,7 @@ use Throwable;
 /**
  * Thrown when user certificate parsing fails.
  */
-// TODO: currently not used, maybe implement it at the same places as in Java library
+// currently not used
 class UserCertificateParseException extends AuthTokenException
 {
     public function __construct(Throwable $cause)
