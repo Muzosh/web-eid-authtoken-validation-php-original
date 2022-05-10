@@ -1,5 +1,5 @@
 # web-eid-authtoken-validation-php
-* PHP library used for validating [Web-eID token](https://github.com/web-eid)
+* PHP library used for validating [Web-eID](https://github.com/web-eid) token
   * follows same principles and functionality of existing [java](https://github.com/web-eid/web-eid-authtoken-validation-java) and [.net](https://github.com/web-eid/web-eid-authtoken-validation-dotnet) validation libraries
   * however in PHP there is no bouncy-castle, which is heavily used in existing libraries
   * most stuff (working with certificates, keys, cryptography, etc.) is replicated with [phpseclib](https://phpseclib.com/) library + OCSP request and response handling (creation, verification, etc.) is developed from scratch
