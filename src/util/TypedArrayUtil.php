@@ -49,7 +49,7 @@ abstract class TypedArray implements Countable, ArrayAccess, IteratorAggregate
         return isset($this->array[$offset]);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         return $this->array[$offset];
     }

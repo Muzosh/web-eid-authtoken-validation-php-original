@@ -21,7 +21,7 @@ class OcspRequestObject
         // create base array for request
         $this->ocspRequest = array(
             'tbsRequest' => array(
-                'version' => 0,
+                'version' => 'v1',
                 'requestList' => array(),
                 'requestExtensions' => array(),
             ),
