@@ -32,8 +32,7 @@
 			"muzosh\\web_eid_authtoken_validation_php\\": "src"
 		},
 		"classmap": [
-			"src/util/TypedArrayUtil.php",
-			"src/util/TrustedCertificates.php"
+			"src/util/TypedArrayUtil.php"
 		],
 		"files": [
 			"config/Config.php"

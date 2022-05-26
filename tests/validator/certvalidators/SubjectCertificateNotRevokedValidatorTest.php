@@ -14,7 +14,7 @@ use muzosh\web_eid_authtoken_validation_php\ocsp\ASN1Util;
 use muzosh\web_eid_authtoken_validation_php\ocsp\OcspResponseObject;
 use muzosh\web_eid_authtoken_validation_php\testutil\Certificates;
 use muzosh\web_eid_authtoken_validation_php\testutil\OcspServiceMaker;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateTrustedValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClient;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClientImpl;
@@ -44,7 +44,7 @@ class SubjectCertificateNotRevokedValidatorTest extends TestCase
     protected function setUp(): void
     {
         ASN1Util::loadOIDs();
-        $this->trustedValidator = new SubjectCertificateTrustedValidator(new TrustedAnchors(array()));
+        $this->trustedValidator = new SubjectCertificateTrustedValidator(new TrustedCertificates(array()));
         self::setSubjectCertificateIssuerCertificate($this->trustedValidator);
         $this->estEid2018Cert = Certificates::getJaakKristjanEsteid2018Cert();
     }

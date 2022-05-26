@@ -9,7 +9,7 @@ use DateTime;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use phpseclib3\File\X509;
 
 final class CertificateValidator
@@ -32,21 +32,19 @@ final class CertificateValidator
         }
     }
 
-    public static function trustedCACertificatesAreValidOnDate(TrustedAnchors $trustedCACertificateAnchors, DateTime $date): void
+    public static function trustedCACertificatesAreValidOnDate(TrustedCertificates $trustedCertificates, DateTime $date): void
     {
-        foreach ($trustedCACertificateAnchors->getCertificates() as $cert) {
+        foreach ($trustedCertificates->getCertificates() as $cert) {
             self::certificateIsValidOnDate($cert, $date, 'Trusted CA');
         }
     }
 
     public static function validateIsSignedByTrustedCA(
         X509 $certificate,
-        TrustedAnchors $trustedCACertificateAnchors
-        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-        // CertStore $trustedCACertificateCertStore
+        TrustedCertificates $trustedCertificates
         // DateTime $date - cannot be used in X509 object? maybe setStartDate and setEndDate functions?
     ): X509 {
-        foreach ($trustedCACertificateAnchors->getCertificates() as $trustedCertificate) {
+        foreach ($trustedCertificates->getCertificates() as $trustedCertificate) {
             $certificate->loadCA($trustedCertificate->saveX509($trustedCertificate->getCurrentCert(), X509::FORMAT_PEM));
         }
 
@@ -62,8 +60,8 @@ final class CertificateValidator
         throw new CertificateNotTrustedException($certificate);
     }
 
-    public static function buildTrustAnchorsFromCertificates(array $certificates): TrustedAnchors
+    public static function buildTrustedCertificates(array $certificates): TrustedCertificates
     {
-        return new TrustedAnchors($certificates);
+        return new TrustedCertificates($certificates);
     }
 }

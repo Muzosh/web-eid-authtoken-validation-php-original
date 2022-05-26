@@ -7,19 +7,19 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\util\DefaultClock;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use phpseclib3\File\X509;
 
 final class SubjectCertificateExpiryValidator implements SubjectCertificateValidator
 {
     private Logger $logger;
-    private TrustedAnchors $trustedCACertificateAnchors;
+    private TrustedCertificates $trustedCertificates;
 
-    public function __construct(TrustedAnchors $trustedCACertificateAnchors)
+    public function __construct(TrustedCertificates $trustedCertificates)
     {
         $this->logger = WebEidLogger::getLogger(self::class);
-        $this->trustedCACertificateAnchors = $trustedCACertificateAnchors;
+        $this->trustedCertificates = $trustedCertificates;
     }
 
     /**
@@ -32,7 +32,7 @@ final class SubjectCertificateExpiryValidator implements SubjectCertificateValid
     {
         // Use the clock instance so that the date can be mocked in tests.
         $now = DefaultClock::getInstance()->now();
-        CertificateValidator::trustedCACertificatesAreValidOnDate($this->trustedCACertificateAnchors, $now);
+        CertificateValidator::trustedCACertificatesAreValidOnDate($this->trustedCertificates, $now);
         $this->logger->debug('CA certificates are valid.');
         CertificateValidator::certificateIsValidOnDate($subjectCertificate, $now, 'User');
         $this->logger->debug('User certificate is valid.');

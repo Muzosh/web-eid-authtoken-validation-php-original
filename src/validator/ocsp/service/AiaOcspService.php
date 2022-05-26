@@ -9,7 +9,7 @@ use GuzzleHttp\Psr7\Uri;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
 use muzosh\web_eid_authtoken_validation_php\util\CertStore;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspResponseValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspUrl;
 use phpseclib3\File\X509;
@@ -19,17 +19,13 @@ use phpseclib3\File\X509;
  */
 class AiaOcspService implements OcspService
 {
-    private TrustedAnchors $trustedCACertificateAnchors;
-    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-    // private CertStore $trustedCACertificateCertStore;
+    private TrustedCertificates $trustedCertificates;
     private Uri $url;
     private bool $supportsNonce;
 
     public function __construct(AiaOcspServiceConfiguration $configuration, X509 $certificate)
     {
-        $this->trustedCACertificateAnchors = $configuration->getTrustedCACertificateAnchors();
-        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-        // $this->trustedCACertificateCertStore = $configuration->getTrustedCACertificateCertStore();
+        $this->trustedCertificates = $configuration->getTrustedCertificates();
         $this->url = self::getOcspAiaUrlFromCertificate($certificate);
         $this->supportsNonce = !$configuration->getNonceDisabledOcspUrls()->inArray($this->url);
     }
@@ -49,7 +45,7 @@ class AiaOcspService implements OcspService
         CertificateValidator::certificateIsValidOnDate($cert, $producedAt, 'AIA OCSP responder');
         // Trusted certificates' validity has been already verified in validateCertificateExpiry().
         OcspResponseValidator::validateHasSigningExtension($cert);
-        CertificateValidator::validateIsSignedByTrustedCA($cert, $this->trustedCACertificateAnchors); // , $this->trustedCACertificateCertStore, $this->producedAt);
+        CertificateValidator::validateIsSignedByTrustedCA($cert, $this->trustedCertificates); // , $this->trustedCACertificateCertStore, $this->producedAt);
     }
 
     private static function getOcspAiaUrlFromCertificate(X509 $certificate): Uri

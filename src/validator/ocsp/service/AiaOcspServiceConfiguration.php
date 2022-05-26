@@ -5,22 +5,18 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp\service;
 
 use muzosh\web_eid_authtoken_validation_php\util\CertStore;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\UriUniqueArray;
 
 class AiaOcspServiceConfiguration
 {
     private UriUniqueArray $nonceDisabledOcspUrls;
-    private TrustedAnchors $trustedCACertificateAnchors;
-    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-    // private $trustedCACertificateCertStore;
+    private TrustedCertificates $trustedCertificates;
 
-    public function __construct(UriUniqueArray $nonceDisabledOcspUrls, TrustedAnchors $trustedCACertificateAnchors)// , CertStore $trustedCACertificateCertStore)
+    public function __construct(UriUniqueArray $nonceDisabledOcspUrls, TrustedCertificates $trustedCertificates)// , CertStore $trustedCACertificateCertStore)
     {
         $this->nonceDisabledOcspUrls = $nonceDisabledOcspUrls;
-        $this->trustedCACertificateAnchors = $trustedCACertificateAnchors;
-        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-        // $this->trustedCACertificateCertStore = $trustedCACertificateCertStore;
+        $this->trustedCertificates = $trustedCertificates;
     }
 
     public function getNonceDisabledOcspUrls(): UriUniqueArray
@@ -28,14 +24,8 @@ class AiaOcspServiceConfiguration
         return $this->nonceDisabledOcspUrls;
     }
 
-    public function getTrustedCACertificateAnchors(): TrustedAnchors
+    public function getTrustedCertificates(): TrustedCertificates
     {
-        return $this->trustedCACertificateAnchors;
+        return $this->trustedCertificates;
     }
-
-    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-    // public function getTrustedCACertificateCertStore(): CertStore
-    // {
-    //     return $this->trustedCACertificateCertStore;
-    // }
 }

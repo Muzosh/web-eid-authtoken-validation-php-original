@@ -6,32 +6,9 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 
 use Countable;
 
-// CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-// final class CertStore
-// {
-//     private X509Array $certificates;
-//     private array $CRLs;
-
-//     public function __construct(array $certificates, array $CRLs = null)
-//     {
-//         $this->certificates = new X509Array(...$certificates);
-//         $this->CRLs = $CRLs ?? array();
-//     }
-
-//     public function getCertificates(): X509Array
-//     {
-//         return $this->certificates;
-//     }
-
-//     public function getCRLs(): array
-//     {
-//         return $this->CRLs;
-//     }
-// }
-
 // can be maybe changed for define(currentClass::class . "CONST_NAME", EXPRESSION) for nonmalluable variable instead of object with private property?
 // currently it works fine with this object, no need to define it as constant
-final class TrustedAnchors implements Countable
+final class TrustedCertificates implements Countable
 {
     private X509UniqueArray $certificates;
 

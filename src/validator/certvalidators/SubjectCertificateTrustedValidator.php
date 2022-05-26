@@ -7,7 +7,7 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\util\CertStore;
 use muzosh\web_eid_authtoken_validation_php\util\DefaultClock;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use phpseclib3\File\X509;
 
@@ -15,22 +15,16 @@ final class SubjectCertificateTrustedValidator implements SubjectCertificateVali
 {
     private $logger;
 
-    private TrustedAnchors $trustedCACertificateAnchors;
-    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-    // private CertStore $trustedCACertificateCertStore;
+    private TrustedCertificates $trustedCertificates;
     private X509 $subjectCertificateIssuerCertificate;
 
     public function __construct(
-        TrustedAnchors $trustedCACertificateAnchors
-        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-        // CertStore $trustedCACertificateCertStore
+        TrustedCertificates $trustedCertificates
     ) {
         $this->logger = WebEidLogger::getLogger(
             self::class
         );
-        $this->trustedCACertificateAnchors = $trustedCACertificateAnchors;
-        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-        // $this->trustedCACertificateCertStore = $trustedCACertificateCertStore;
+        $this->trustedCertificates = $trustedCertificates;
     }
 
     /**
@@ -44,9 +38,7 @@ final class SubjectCertificateTrustedValidator implements SubjectCertificateVali
         $now = DefaultClock::getInstance()->now();
         $this->subjectCertificateIssuerCertificate = CertificateValidator::validateIsSignedByTrustedCA(
             $subjectCertificate,
-            $this->trustedCACertificateAnchors,
-            // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-            // $this->trustedCACertificateCertStore,
+            $this->trustedCertificates,
             // $now
         );
         $this->logger->debug('Subject certificate is signed by a trusted CA');

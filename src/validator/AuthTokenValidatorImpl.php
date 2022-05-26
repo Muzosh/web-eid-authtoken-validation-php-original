@@ -9,8 +9,7 @@ use muzosh\web_eid_authtoken_validation_php\authtoken\WebEidAuthToken;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateDecodingException;
-use muzosh\web_eid_authtoken_validation_php\util\CertStore;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateExpiryValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateNotRevokedValidator;
@@ -37,10 +36,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
     private Logger $logger;
     private AuthTokenValidationConfiguration $configuration;
     private SubjectCertificateValidatorBatch $subjectCertificateValidators;
-    private TrustedAnchors $trustedCACertificateAnchors;
-
-    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-    // private CertStore $trustedCACertificateCertStore;
+    private TrustedCertificates $trustedCertificates;
 
     private OcspClient $ocspClient;
     private OcspServiceProvider $ocspServiceProvider;
@@ -54,13 +50,10 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         $this->configuration = clone $configuration;
 
         // Create and cache trusted CA certificate JCA objects for SubjectCertificateTrustedValidator and AiaOcspService.
-        $this->trustedCACertificateAnchors = CertificateValidator::buildTrustAnchorsFromCertificates($configuration->getTrustedCACertificates());
-
-        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-        // $this->trustedCACertificateCertStore = CertificateValidator::buildCertStoreFromCertificates($configuration->getTrustedCACertificates());
+        $this->trustedCertificates = CertificateValidator::buildTrustedCertificates($configuration->getTrustedCACertificates());
 
         $this->subjectCertificateValidators = new SubjectCertificateValidatorBatch(
-            new SubjectCertificateExpiryValidator($this->trustedCACertificateAnchors),
+            new SubjectCertificateExpiryValidator($this->trustedCertificates),
             new SubjectCertificatePurposeValidator(),
             new SubjectCertificatePolicyValidator($configuration->getDisallowedSubjectCertificatePolicyIds())
         );
@@ -71,9 +64,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
                 $configuration->getDesignatedOcspServiceConfiguration(),
                 new AiaOcspServiceConfiguration(
                     $configuration->getNonceDisabledOcspUrls(),
-                    $this->trustedCACertificateAnchors,
-					// CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-                    //$this->trustedCACertificateCertStore
+                    $this->trustedCertificates
                 )
             );
         }
@@ -178,7 +169,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
     {
         $certTrustedValidator =
             new SubjectCertificateTrustedValidator(
-                $this->trustedCACertificateAnchors,
+                $this->trustedCertificates,
                 // $this->trustedCACertificateCertStore
             );
 
