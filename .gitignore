@@ -490,3 +490,5 @@ composer.lock
 *.scss.map
 
 .vscode
+test.php
+web-eid-authtoken-validation-php.log

@@ -4,7 +4,7 @@
 
 Provide a detailed description of the change or addition you are proposing.
 
-Make it clear if the issue is a bug, an enhancement or just a question.
+Make it clear if the issue is a bug, an enhancement or just a question (for example by using GitHub tags).
 
 ## Context
 
