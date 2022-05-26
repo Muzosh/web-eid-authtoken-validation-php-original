@@ -21,9 +21,9 @@ class OcspUrlTest extends TestCase
         $this->assertNull(OcspUrl::getOcspUri($stubCertificate));
     }
 
-	// Uri in PHP is not as strict as in Java, so Uris with these bytes get created
-	// and there is no way of us to invoke error other than check for isAbsolute
-	// which is done and handled later in the program
+    // Uri in PHP is not as strict as in Java, so Uris with these bytes get created
+    // and there is no way of us to invoke error other than check for isAbsolute
+    // which is done and handled later in the program
     // public function testWhenExtensionValueIsInvalidThenReturnsNull()
     // {
     //     $stubCertificate = $this->createStub(X509::class);

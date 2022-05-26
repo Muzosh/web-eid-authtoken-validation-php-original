@@ -15,8 +15,6 @@ abstract class ChallengeNonceStore
 {
     abstract public function put(ChallengeNonce $challengeNonce): void;
 
-    abstract protected function getAndRemoveImpl(): ?ChallengeNonce;
-
     public function getAndRemove(): ChallengeNonce
     {
         $challengeNonce = $this->getAndRemoveImpl();
@@ -29,4 +27,6 @@ abstract class ChallengeNonceStore
 
         return $challengeNonce;
     }
+
+    abstract protected function getAndRemoveImpl(): ?ChallengeNonce;
 }

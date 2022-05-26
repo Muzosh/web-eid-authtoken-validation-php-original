@@ -8,14 +8,14 @@ use BadFunctionCallException;
 
 // it is used only in testing, but handles badly some characters ('õ' for example)
  final class TitleCase
-{
-    public function __construct()
-    {
-        throw new BadFunctionCallException('Utility class');
-    }
+ {
+     public function __construct()
+     {
+         throw new BadFunctionCallException('Utility class');
+     }
 
-    public static function toTitleCase(string $input): string
-    {
-        return ucwords(strtolower($input), " -\t\r\n\f\v\\");
-    }
-}
+     public static function toTitleCase(string $input): string
+     {
+         return ucwords(strtolower($input), " -\t\r\n\f\v\\");
+     }
+ }

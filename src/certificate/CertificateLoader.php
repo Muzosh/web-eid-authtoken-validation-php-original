@@ -7,7 +7,6 @@ namespace muzosh\web_eid_authtoken_validation_php\certificate;
 use BadFunctionCallException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateDecodingException;
 use phpseclib3\File\X509;
-use Throwable;
 
 final class CertificateLoader
 {

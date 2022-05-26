@@ -35,11 +35,11 @@ class OcspServiceProviderTest extends TestCase
 
     public function testWhenAiaOcspServiceConfigurationProvidedThenCreatesAiaOcspService(): void
     {
-		// Had to add TEST_of_EE-GovCA2018.pem.crt
-		// to trusted certificates in order to validate responder certificate.
-		// TODO: find out why Java test counterpart is OK without them
+        // Had to add TEST_of_EE-GovCA2018.pem.crt
+        // to trusted certificates in order to validate responder certificate.
+        // TODO: find out why Java test counterpart is OK without them
 
-		// responder certificate issuer is in trusted certificates:
+        // responder certificate issuer is in trusted certificates:
         $ocspServiceProvider = OcspServiceMaker::getAiaOcspServiceProvider();
         $service2018 = $ocspServiceProvider->getService(Certificates::getJaakKristjanEsteid2018Cert());
 
@@ -48,13 +48,13 @@ class OcspServiceProviderTest extends TestCase
 
         $service2018->validateResponderCertificate(Certificates::getTestEsteid2018CA(), new DateTime('Thursday, August 26, 2021 5:46:40 PM'));
 
-		// responder certificate issuer is NOT in trusted certificates:
+        // responder certificate issuer is NOT in trusted certificates:
         $service2015 = $ocspServiceProvider->getService(Certificates::getMariliisEsteid2015Cert());
         $this->assertEquals($service2015->getAccessLocation(), new Uri('http://aia.demo.sk.ee/esteid2015'));
         $this->assertFalse($service2015->doesSupportNonce());
 
-		$this->expectException(CertificateNotTrustedException::class);
-		$this->expectExceptionMessage("Certificate C=EE, O=AS Sertifitseerimiskeskus/2.5.4.97=NTREE-10747013, CN=TEST of ESTEID-SK 2015 is not trusted");
+        $this->expectException(CertificateNotTrustedException::class);
+        $this->expectExceptionMessage('Certificate C=EE, O=AS Sertifitseerimiskeskus/2.5.4.97=NTREE-10747013, CN=TEST of ESTEID-SK 2015 is not trusted');
         $service2015->validateResponderCertificate(Certificates::getTestEsteid2015CA(), new DateTime('Thursday, August 26, 2021 5:46:40 PM'));
     }
 

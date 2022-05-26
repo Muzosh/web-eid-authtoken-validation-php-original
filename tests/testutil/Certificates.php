@@ -22,7 +22,7 @@ class Certificates
 
     public static function loadCertificates(): void
     {
-        $certificates = CertificateLoader::loadCertificatesFromPath(__DIR__.'/../_resources', 'TEST_of_ESTEID-SK_2015.cer', 'TEST_of_ESTEID2018.cer', 'TEST_of_SK_OCSP_RESPONDER_2020.cer','TEST_of_EE-GovCA2018.crt');
+        $certificates = CertificateLoader::loadCertificatesFromPath(__DIR__.'/../_resources', 'TEST_of_ESTEID-SK_2015.cer', 'TEST_of_ESTEID2018.cer', 'TEST_of_SK_OCSP_RESPONDER_2020.cer', 'TEST_of_EE-GovCA2018.crt');
         self::$testEsteid2015CA = $certificates[0];
         self::$testEsteid2018CA = $certificates[1];
         self::$testSkOcspResponder2020 = $certificates[2];

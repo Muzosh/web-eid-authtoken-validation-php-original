@@ -15,7 +15,6 @@ use muzosh\web_eid_authtoken_validation_php\ocsp\OcspResponseObject;
 use muzosh\web_eid_authtoken_validation_php\testutil\Certificates;
 use muzosh\web_eid_authtoken_validation_php\testutil\OcspServiceMaker;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
-use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateTrustedValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClient;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClientImpl;
 use phpseclib3\File\X509;

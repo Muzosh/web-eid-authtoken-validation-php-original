@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
-use muzosh\web_eid_authtoken_validation_php\util\CertStore;
 use muzosh\web_eid_authtoken_validation_php\util\DefaultClock;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;

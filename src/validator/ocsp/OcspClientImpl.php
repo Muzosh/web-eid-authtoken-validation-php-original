@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\RequestOptions;
@@ -13,7 +12,6 @@ use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
 use muzosh\web_eid_authtoken_validation_php\ocsp\OcspResponseObject;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
-use RuntimeException;
 
 class OcspClientImpl implements OcspClient
 {
@@ -48,7 +46,7 @@ class OcspClientImpl implements OcspClient
             'charset' => 'utf-8',
         ), $encodedOcspRequest);
 
-		$response = $this->httpClient->send($request);
+        $response = $this->httpClient->send($request);
 
         $statusCode = $response->getStatusCode();
 

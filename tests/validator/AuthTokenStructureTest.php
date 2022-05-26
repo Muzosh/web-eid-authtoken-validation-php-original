@@ -13,14 +13,14 @@ use muzosh\web_eid_authtoken_validation_php\testutil\AbstractTestWithValidator;
  */
 class AuthTokenStructureTest extends AbstractTestWithValidator
 {
-    // this cannot happened, PHP does not have nullable string
-    // public function testWhenNullToken_thenParsingFails():void {
-    // 	$this->expectNotToPerformAssertions();
-    // 	$this->expectException(AuthTokenParseException::class);
-    // 	$this->expectExceptionMessage("Auth token is null or too short");
+    /* this cannot happened, PHP does not have nullable string
+    public function testWhenNullToken_thenParsingFails():void {
+    	$this->expectNotToPerformAssertions();
+    	$this->expectException(AuthTokenParseException::class);
+    	$this->expectExceptionMessage("Auth token is null or too short");
 
-    // 	$this->validator->parse(null);
-    // }
+    	$this->validator->parse(null);
+    } */
 
     public function testWhenNullStrTokenThenParsingFails(): void
     {
@@ -44,7 +44,8 @@ class AuthTokenStructureTest extends AbstractTestWithValidator
     }
 
     public function testWhenUnknownTokenVersionThenParsingFails(): void
-    {   $token = $this->replaceTokenField(self::VALID_AUTH_TOKEN, 'web-eid:1', 'invalid');
+    {
+        $token = $this->replaceTokenField(self::VALID_AUTH_TOKEN, 'web-eid:1', 'invalid');
 
         $this->expectException(AuthTokenParseException::class);
         $this->expectExceptionMessage("Only token format version 'web-eid:1' is currently supported");
