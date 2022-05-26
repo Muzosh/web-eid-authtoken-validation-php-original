@@ -66,11 +66,4 @@ final class CertificateValidator
     {
         return new TrustedAnchors($certificates);
     }
-
-    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-    // public static function buildCertStoreFromCertificates(array $certificates): CertStore
-    // {
-    // 	// TODO: how to ensure that treat safety Java comment is talking about?
-    //     return new CertStore($certificates, null);
-    // }
 }

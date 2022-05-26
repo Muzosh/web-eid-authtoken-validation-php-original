@@ -6,7 +6,6 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 
 use BadFunctionCallException;
 
-// TODO: THIS CLASS MIGHT NOT BE USED AT ALL
 // it is used only in testing, but handles badly some characters ('õ' for example)
  final class TitleCase
 {

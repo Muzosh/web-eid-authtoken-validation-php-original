@@ -11,9 +11,6 @@ use Throwable;
 
 final class CertificateLoader
 {
-    // TODO: put this into config? maybe use nextpack to create better PHP library skeleton?
-    public const CERTPATH = __DIR__.'/../../certs';
-
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');
@@ -34,16 +31,4 @@ final class CertificateLoader
 
         return $caCertificates;
     }
-
-    // probably will not be needed since X509 can load bas64 encoded certificate
-    // public static function decodeCertificateFromBase64(string $certificateInBase64): X509
-    // {
-    //     // Objects.requireNonNull(certificateInBase64, "certificateInBase64");
-
-    //     try {
-    //         return new X509(Base64Util::decodeBase64($certificateInBase64));
-    //     } catch (Throwable $e) {
-    //         throw new CertificateDecodingException($e);
-    //     }
-    // }
 }

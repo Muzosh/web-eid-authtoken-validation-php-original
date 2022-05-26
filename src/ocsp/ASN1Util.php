@@ -6,12 +6,12 @@ namespace muzosh\web_eid_authtoken_validation_php\ocsp;
 
 use BadFunctionCallException;
 use phpseclib3\File\ASN1;
+use phpseclib3\File\ASN1\Maps\SubjectPublicKeyInfo;
 use UnexpectedValueException;
 
 final class ASN1Util
 {
     public const ID_PKIX_OCSP_NONCE = '1.3.6.1.5.5.7.48.1.2';
-    public const ID_SHA1 = '1.3.14.3.2.26';
 
     public function __construct()
     {
@@ -23,7 +23,7 @@ final class ASN1Util
         // these were discovered during testing as missing
         ASN1::loadOIDs(array(
             'id-pkix-ocsp-nonce' => self::ID_PKIX_OCSP_NONCE,
-            'id-sha1' => self::ID_SHA1,
+            'id-sha1' => '1.3.14.3.2.26',
             'qcStatements(3)' => '1.3.6.1.5.5.7.1.3',
             'street' => '2.5.4.9',
             'id-pkix-ocsp-basic' => '1.3.6.1.5.5.7.48.1.1',
@@ -38,18 +38,23 @@ final class ASN1Util
         $extractedBER = ASN1::extractBER($publicKey);
         $decodedBER = ASN1::decodeBER($extractedBER);
 
-        $onlyKeyData = $decodedBER[0]['content'][1]['content'];
+        /*
+        SubjectPublicKeyInfo BER contains ASN1 'algorithm' and 'subjectPublicKey'.
+        We only need the second part.
+        */
+        $onlySubjectPublicKey = ASN1::asn1map($decodedBER[0], SubjectPublicKeyInfo::MAP)['subjectPublicKey'];
 
-        return self::removeZeroPaddingFromFirstByte($onlyKeyData);
+        // Integers in ASN1 lead with 0 byte indicating the integer is positive
+        // We need to remove this byte so it can be parsed correctly
+        return self::removeIntegerZeroPaddingFromFirstByte($onlySubjectPublicKey);
     }
 
-    public static function removeZeroPaddingFromFirstByte($encoded): string
+    public static function removeIntegerZeroPaddingFromFirstByte($encoded): string
     {
         return pack('c*', ...array_slice(unpack('c*', $encoded), 1));
     }
 
     // this function is translated from Java io.jsonwebtoken.impl.crypto.EllipticCurveProvider
-    // TODO: is this ok to translate? isnt it some kind of breach of licence?
     /*
     * Copyright (C) 2015 jsonwebtoken.io
     *
@@ -66,6 +71,7 @@ final class ASN1Util
     * limitations under the License.
     */
     // In case of ECDSA, the eID card outputs raw R||S, so we need to trascode it to DER.
+    // currently not used - might be used in src/validator/AuthTokenSignatureValidator.php:validate()
     public static function transcodeSignatureToDER(array $signature): array
     {
         $rawLen = count($signature) / 2;

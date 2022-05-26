@@ -144,7 +144,7 @@ final class X509UniqueArray extends X509Array
         $this->checkInstance($value);
 
         if (in_array($value, $this->array, true)) {
-            // TODO: maybe do nothing instead of throwing exception? depends on function usage
+            // maybe do nothing instead of throwing exception? depends on function usage
             throw new InvalidArgumentException('This object already is in the array.');
         }
 
@@ -173,7 +173,7 @@ final class UriUniqueArray extends TypedArray
         $this->checkInstance($value);
 
         if (in_array($value, $this->array, true)) {
-            // TODO: maybe do nothing instead of throwing exception? depends on function usage
+            // maybe do nothing instead of throwing exception? depends on function usage
             throw new InvalidArgumentException('This object already is in the array.');
         }
 

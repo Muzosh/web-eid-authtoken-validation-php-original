@@ -52,12 +52,11 @@ final class OcspUtil
         $certId['issuerKeyHash'] = hash($hashAlg, $pureKeyData, true);
 
         // hashAlgorithm
+        // sha1 is hardcoded
         if ('sha1' !== $hashAlg) {
-            throw new InvalidArgumentException('Not implemented yet');
+            throw new InvalidArgumentException('Not implemented yet. SHA1 is used as default for speed');
         }
-
-        // TODO: this should not be hard-coded - use OIDs or names everywhere?
-        $certId['hashAlgorithm']['algorithm'] = 'id-sha1';
+        $certId['hashAlgorithm']['algorithm'] = ASN1::getOID('id-sha1');
 
         return $certId;
     }

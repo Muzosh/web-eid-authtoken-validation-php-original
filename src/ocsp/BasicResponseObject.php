@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\ocsp;
 
 use DateTime;
+use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspTbsResponseData;
 use phpseclib3\File\ASN1;
 
@@ -29,7 +30,7 @@ class BasicResponseObject
 
     public function getSignature(): string
     {
-        return ASN1Util::removeZeroPaddingFromFirstByte($this->ocspBasicResponse['signature']);
+        return ASN1Util::removeIntegerZeroPaddingFromFirstByte($this->ocspBasicResponse['signature']);
     }
 
     public function getEncodedResponseData(): string
@@ -44,9 +45,8 @@ class BasicResponseObject
 
     public function getSignatureAlgorithm(): string
     {
-        // ! currently works only for SHA and known OIDs
-        // TODO: definitely needs some other more robust approach
-        // example input: sha256WithRSAEncryption
+        // ! currently works only for shaXXXWithXXX (example: sha256WithRSAEncryption)
+        // this method assumes the ocspBasicResponse translated OID to algorithm name during its creation
         $algorithm = strtolower($this->ocspBasicResponse['signatureAlgorithm']['algorithm']);
 
         if (false !== ($pos = strpos($algorithm, 'sha3-'))) {
@@ -56,20 +56,29 @@ class BasicResponseObject
             return substr($algorithm, $pos, 6);
         }
 
-        return 'sha256';
+        throw new OCSPCertificateException(
+            'Not implemented yet. Add algorithm name in ASN1Util::loadOIDs for OID'.
+            $this->ocspBasicResponse['signatureAlgorithm']['algorithm']
+        );
     }
 
     public function getNonceExtension(): string
     {
-		// TODO: name is again hard-coded, there should be some better mechanism implemented
-		// this needs better knowledge of possible values and OIDs
-        return current(
+        $value = current(
             array_filter(
                 $this->ocspBasicResponse['tbsResponseData']['responseExtensions'],
                 function ($extension) {
-                    return ASN1Util::ID_PKIX_OCSP_NONCE == $extension['extnId'] || 'id-pkix-ocsp-nonce' == $extension['extnId'];
+                    return ASN1Util::ID_PKIX_OCSP_NONCE == ASN1::getOID($extension['extnId']);
                 }
             )
         )['extnValue'];
+
+        if ($value) {
+            return $value;
+        }
+
+        throw new OCSPCertificateException(
+            'Not implemented yet. Update algorithm name in ASN1Util::loadOIDs for id-pkix-ocsp-nonce.'
+        );
     }
 }

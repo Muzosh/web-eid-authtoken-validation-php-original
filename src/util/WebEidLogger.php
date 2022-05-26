@@ -15,8 +15,7 @@ final class WebEidLogger
     {
         $logger = new Logger($class);
 
-        // TODO: put file location to config or global constant
-        $handler = new StreamHandler('web-eid-authtoken-validation-php.log', Logger::DEBUG, true, null, true);
+        $handler = new StreamHandler(CONFIG['log_file_path'], Logger::DEBUG, true, null, true);
 
         // $handler->setFormatter(new LineFormatter(null, null, true, false, true));
         $handler->setFormatter(new JsonFormatter());

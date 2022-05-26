@@ -90,6 +90,10 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         }
 
         $certStatusResponse = $basicResponse->getResponses()[0];
+
+		// translate algorithm name to OID for correct equality check
+        $certStatusResponse['certID']['hashAlgorithm']['algorithm'] = ASN1::getOID($certStatusResponse['certID']['hashAlgorithm']['algorithm']);
+
         if ($requestCertificateId != $certStatusResponse['certID']) {
             throw new UserCertificateOCSPCheckFailedException('OCSP responded with certificate ID that differs from the requested ID');
         }
