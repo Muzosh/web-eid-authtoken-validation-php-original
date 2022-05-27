@@ -32,13 +32,23 @@ use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNonceNotFoundExc
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
 
 /**
- * A store for storing generated challenge nonces and accessing their generation time.
+ * An abstract class for storing generated challenge nonces and accessing their generation time.
+ * External application must implement this class based on available technologies for persistent store.
  */
 abstract class ChallengeNonceStore
 {
+    /**
+     * Store challenge nonce.
+     */
     abstract public function put(ChallengeNonce $challengeNonce): void;
 
-    public function getAndRemove(): ChallengeNonce
+    /**
+	 * This function should be used by external application to get and remove challenge nonce.\
+	 * The implementation of removing nonce from store should be in getAndRemoveImpl
+     * @throws ChallengeNonceNotFoundException
+     * @throws ChallengeNonceExpiredException
+     */
+    final public function getAndRemove(): ChallengeNonce
     {
         $challengeNonce = $this->getAndRemoveImpl();
         if (null == $challengeNonce) {
@@ -51,5 +61,9 @@ abstract class ChallengeNonceStore
         return $challengeNonce;
     }
 
+	/**
+	 * Get and remove current challenge nonce for validation.
+	 * @return null|ChallengeNonce return null if challenge nonce was not found or there was other error
+	 */
     abstract protected function getAndRemoveImpl(): ?ChallengeNonce;
 }

@@ -45,7 +45,7 @@ final class AuthTokenValidationConfiguration
     private ?Uri $siteOrigin = null;
     private ?DesignatedOcspServiceConfiguration $designatedOcspServiceConfiguration = null;
 
-    private array $trustedCACertificates = array();
+    private array $trustedCertificates = array();
     private array $disallowedSubjectCertificatePolicyIds;
     private UriUniqueArray $nonceDisabledOcspUrls;
 
@@ -73,9 +73,9 @@ final class AuthTokenValidationConfiguration
         return $this->siteOrigin;
     }
 
-    public function &getTrustedCACertificates(): array
+    public function &getTrustedCertificates(): array
     {
-        return $this->trustedCACertificates;
+        return $this->trustedCertificates;
     }
 
     public function isUserCertificateRevocationCheckWithOcspEnabled(): bool
@@ -132,7 +132,7 @@ final class AuthTokenValidationConfiguration
 
         self::validateIsOriginURL($this->siteOrigin);
 
-        if (0 == count($this->trustedCACertificates)) {
+        if (0 == count($this->trustedCertificates)) {
             throw new InvalidArgumentException('At least one trusted certificate authority must be provided');
         }
         DateAndTime::requirePositiveDuration($this->ocspRequestTimeoutSeconds, 'OCSP request timeout');
@@ -167,20 +167,4 @@ final class AuthTokenValidationConfiguration
             throw new InvalidArgumentException('Origin URI must only contain the HTTPS scheme, host and optional port component');
         }
     }
-
-    // might not be needed since we use 'clone' in PHP
-    // private static function duplicate(AuthTokenValidationConfiguration $other)
-    // {
-    //     $new = new AuthTokenValidationConfiguration();
-
-    //     $new->siteOrigin = clone $other->siteOrigin;
-    //     $new->trustedCACertificates = array_unique($other->trustedCACertificates, SORT_REGULAR);
-    //     $new->isUserCertificateRevocationCheckWithOcspEnabled = clone $other->isUserCertificateRevocationCheckWithOcspEnabled;
-    //     $new->ocspRequestTimeoutSeconds = $other->ocspRequestTimeoutSeconds;
-    //     $new->designatedOcspServiceConfiguration = clone $other->designatedOcspServiceConfiguration;
-    //     $new->disallowedSubjectCertificatePolicyIds = array_unique($other->disallowedSubjectCertificatePolicyIds, SORT_REGULAR);
-    //     $new->nonceDisabledOcspUrls = clone $other->nonceDisabledOcspUrls;
-
-    //     return $new;
-    // }
 }

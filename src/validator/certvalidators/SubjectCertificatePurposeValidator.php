@@ -32,6 +32,8 @@ use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateMissingPur
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateWrongPurposeException;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use phpseclib3\File\X509;
+use Psr\Log\InvalidArgumentException;
+use Throwable;
 
 final class SubjectCertificatePurposeValidator implements SubjectCertificateValidator
 {
@@ -50,16 +52,21 @@ final class SubjectCertificatePurposeValidator implements SubjectCertificateVali
     /**
      * Validates that the purpose of the user certificate from the authentication token contains client authentication.
      *
-     * @param subjectCertificate user certificate to be validated
+     * @throws UserCertificateMissingPurposeException
+     * @throws UserCertificateWrongPurposeException
+     * @throws InvalidArgumentException
+     * @throws Throwable
      */
     public function validate(X509 $subjectCertificate): void
     {
         $usages = $subjectCertificate->getExtension(
             self::EXTENDED_KEY_USAGE
         );
+        // Extended usages cannot be empty or missing
         if (!$usages || empty($usages)) {
             throw new UserCertificateMissingPurposeException();
         }
+        // Extended usages must contain id-kp-clientAuth
         if (!in_array(self::EXTENDED_CLIENT_AUTHENTICATION, $usages)) {
             throw new UserCertificateWrongPurposeException();
         }

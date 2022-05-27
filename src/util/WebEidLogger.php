@@ -32,6 +32,7 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
+
 final class WebEidLogger
 {
     public static function getLogger(string $class): Logger

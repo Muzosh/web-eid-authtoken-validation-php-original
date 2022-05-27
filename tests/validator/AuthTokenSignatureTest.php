@@ -73,7 +73,7 @@ class AuthTokenSignatureTest extends AbstractTestWithValidator
         $this->assertEquals('JÕEORG,JAAK-KRISTJAN,38001085718', CertificateData::getSubjectCN($result));
         $this->assertEquals('JAAK-KRISTJAN', CertificateData::getSubjectGivenName($result));
         $this->assertEquals('JÕEORG', CertificateData::getSubjectSurname($result));
-        $this->assertEquals('PNOEE-38001085718', CertificateData::getSubjectIdCode($result));
+        $this->assertEquals('PNOEE-38001085718', CertificateData::getSubjectSerialNumber($result));
         $this->assertEquals('EE', CertificateData::getSubjectCountryCode($result));
     }
 

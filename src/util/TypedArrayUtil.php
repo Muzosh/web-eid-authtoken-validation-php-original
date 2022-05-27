@@ -47,22 +47,23 @@ use TypeError;
     in needed more array functions, here is good example
     https://gist.github.com/MightyPork/5ad28f208f046a24831c
     */
+
 abstract class TypedArray implements Countable, ArrayAccess, IteratorAggregate
 {
     protected array $array;
 
     abstract public function __construct();
 
-    // this method makes it possible to call array_XX PHP functions on this object,
-    // but does not work with array_push, we it is not currently needed
-    // public function __call($func, $argv)
-    // {
-    //     if (!is_callable($func) || 'array_' !== substr(strval($func), 0, 6)) {
-    //         throw new BadMethodCallException(__CLASS__.'->'.$func);
-    //     }
+    /* this method makes it possible to call array_XX PHP functions on this object,
+    but does not work with array_push, we it is not currently needed
+    public function __call($func, $argv)
+    {
+        if (!is_callable($func) || 'array_' !== substr(strval($func), 0, 6)) {
+            throw new BadMethodCallException(__CLASS__.'->'.$func);
+        }
 
-    //     return call_user_func_array($func, array_merge(array($this->array), $argv));
-    // }
+        return call_user_func_array($func, array_merge(array($this->array), $argv));
+    } */
 
     public function count(): int
     {
@@ -110,21 +111,6 @@ abstract class TypedArray implements Countable, ArrayAccess, IteratorAggregate
     }
 }
 
-final class SubjectCertificateValidatorArray extends TypedArray
-{
-    public function __construct(SubjectCertificateValidator ...$array)
-    {
-        $this->array = $array;
-    }
-
-    public function checkInstance($value): void
-    {
-        if (!$value instanceof SubjectCertificateValidator) {
-            throw new TypeError('Can only insert '.SubjectCertificateValidator::class);
-        }
-    }
-}
-
 class X509Array extends TypedArray
 {
     public function __construct(X509 ...$certificates)
@@ -150,6 +136,21 @@ class X509Array extends TypedArray
         }
 
         return $subjectDNs;
+    }
+}
+
+final class SubjectCertificateValidatorArray extends TypedArray
+{
+    public function __construct(SubjectCertificateValidator ...$array)
+    {
+        $this->array = $array;
+    }
+
+    public function checkInstance($value): void
+    {
+        if (!$value instanceof SubjectCertificateValidator) {
+            throw new TypeError('Can only insert '.SubjectCertificateValidator::class);
+        }
     }
 }
 

@@ -312,7 +312,7 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
 
     public function testWhenCertificateCaIsNotPartOfTrustChainThenValidationFails(): void
     {
-        $validatorWithWrongTrustedCA = AuthTokenValidators::getAuthTokenValidatorWithWrongTrustedCA();
+        $validatorWithWrongTrustedCA = AuthTokenValidators::getAuthTokenValidatorWithWrongTrustedCertificate();
 
         $this->expectException(CertificateNotTrustedException::class);
         $validatorWithWrongTrustedCA->validate($this->validAuthToken, self::VALID_CHALLENGE_NONCE);

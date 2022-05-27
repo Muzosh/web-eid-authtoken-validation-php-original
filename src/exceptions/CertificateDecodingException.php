@@ -26,7 +26,9 @@
 declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\exceptions;
-
+/**
+ * Thrown when the certificate could not be decoded or parsed.
+ */
 class CertificateDecodingException extends AuthTokenException
 {
     public function __construct(string $resource)

@@ -38,11 +38,17 @@ final class SubjectCertificatePolicyValidator implements SubjectCertificateValid
     {
         $this->disallowedSubjectCertificatePolicyIds = $disallowedSubjectCertificatePolicyIds;
     }
-
+	/**
+	 * 
+	 * @param X509 $subjectCertificate
+	 * @return void
+	 * @throws UserCertificateDisallowedPolicyException
+	 */
     public function validate(X509 $subjectCertificate): void
     {
         $policiesArray = $subjectCertificate->getExtension('id-ce-certificatePolicies');
 
+		// check if all policies are NOT in disallowedSubjectCertificatePolicyIds
         foreach ($policiesArray as $policy) {
             if (in_array($policy['policyIdentifier'], $this->disallowedSubjectCertificatePolicyIds, true)) {
                 throw new UserCertificateDisallowedPolicyException();

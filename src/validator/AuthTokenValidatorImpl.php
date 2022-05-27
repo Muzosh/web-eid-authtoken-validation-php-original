@@ -73,7 +73,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         $this->configuration = clone $configuration;
 
         // Create and cache trusted CA certificate JCA objects for SubjectCertificateTrustedValidator and AiaOcspService.
-        $this->trustedCertificates = CertificateValidator::buildTrustedCertificates($configuration->getTrustedCACertificates());
+        $this->trustedCertificates = CertificateValidator::buildTrustedCertificates($configuration->getTrustedCertificates());
 
         $this->subjectCertificateValidators = new SubjectCertificateValidatorBatch(
             new SubjectCertificateExpiryValidator($this->trustedCertificates),
@@ -193,7 +193,6 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         $certTrustedValidator =
             new SubjectCertificateTrustedValidator(
                 $this->trustedCertificates,
-                // $this->trustedCACertificateCertStore
             );
 
         $validatorBatch = new SubjectCertificateValidatorBatch(

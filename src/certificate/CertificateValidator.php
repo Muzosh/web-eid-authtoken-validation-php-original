@@ -33,15 +33,38 @@ use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredExcepti
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
+use phpseclib3\Exception\UnsupportedAlgorithmException;
 use phpseclib3\File\X509;
+use RangeException;
+use RuntimeException;
+use TypeError;
 
+/**
+ * Utility class for certificate validation.
+ */
 final class CertificateValidator
 {
+    /**
+     * Don't call this, all functions are static.
+     *
+     * @throws BadFunctionCallException
+     *
+     * @return never
+     */
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');
     }
 
+    /**
+     * Checks if certificate is valid on specified date.
+     *
+     * @param string $subject input certificate identifier for exception logging
+     *                        (some detail about certificate, i.e. User, RootCA, OCSP Responder, etc.)
+     *
+     * @throws CertificateNotYetValidException
+     * @throws CertificateExpiredException
+     */
     public static function certificateIsValidOnDate(X509 $cert, DateTime $date, string $subject): void
     {
         if (!$cert->validateDate($date)) {
@@ -55,34 +78,61 @@ final class CertificateValidator
         }
     }
 
-    public static function trustedCACertificatesAreValidOnDate(TrustedCertificates $trustedCertificates, DateTime $date): void
+    /**
+     * Checks if all certificates in TrustedCertificates collection are valid on specified date.
+     *
+     * @throws CertificateNotYetValidException
+     * @throws CertificateExpiredException
+     */
+    public static function trustedCertificatesAreValidOnDate(TrustedCertificates $trustedCertificates, DateTime $date): void
     {
         foreach ($trustedCertificates->getCertificates() as $cert) {
             self::certificateIsValidOnDate($cert, $date, 'Trusted CA');
         }
     }
 
-    public static function validateIsSignedByTrustedCA(
-        X509 $certificate,
+    /**
+     * Checks if certificate was signed by one of the trusted certificates.
+     *
+     * @throws RangeException
+     * @throws TypeError
+     * @throws RuntimeException
+     * @throws UnsupportedAlgorithmException
+     * @throws CertificateNotTrustedException
+     *
+     * @return X509 trusted certificate which signed the untrusted certificate
+     */
+    public static function validateIsSignedByTrustedCertificate(
+        X509 $untrustedCertificate,
         TrustedCertificates $trustedCertificates
-        // DateTime $date - cannot be used in X509 object? maybe setStartDate and setEndDate functions?
     ): X509 {
         foreach ($trustedCertificates->getCertificates() as $trustedCertificate) {
-            $certificate->loadCA($trustedCertificate->saveX509($trustedCertificate->getCurrentCert(), X509::FORMAT_PEM));
+            // loadCA function accepts PEM format, so we need to get it from $trustedCertificate
+            $untrustedCertificate->loadCA(
+                $trustedCertificate->saveX509(
+                    $trustedCertificate->getCurrentCert(),
+                    X509::FORMAT_PEM
+                )
+            );
         }
 
         // ? Do we want to disable fetching of isser certificates of loaded intermediate certs?
-        // $certificate->disableURLFetch();
+        $untrustedCertificate->disableURLFetch();
 
-        if ($certificate->validateSignature()) {
-            $chain = $certificate->getChain();
+        if ($untrustedCertificate->validateSignature()) {
+            $chain = $untrustedCertificate->getChain();
 
             return end($chain);
         }
 
-        throw new CertificateNotTrustedException($certificate);
+        throw new CertificateNotTrustedException($untrustedCertificate);
     }
 
+    /**
+     * Create TrustedCertificates object from array of phpseclib3\File\X509 objects.
+     *
+     * @param array $certificates needs to contain only phpseclib3\File\X509 objects
+     */
     public static function buildTrustedCertificates(array $certificates): TrustedCertificates
     {
         return new TrustedCertificates($certificates);

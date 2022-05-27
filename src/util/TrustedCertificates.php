@@ -29,8 +29,11 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 
 use Countable;
 
-// can be maybe changed for define(currentClass::class . "CONST_NAME", EXPRESSION) for nonmalluable variable instead of object with private property?
-// currently it works fine with this object, no need to define it as constant
+/**
+ * This class represents a typed set. It accepts only phpseclib3\File\X509 objects and
+ * there cannot be duplicates.\
+ * It also mimicks the functionality of regular PHP array.
+ */
 final class TrustedCertificates implements Countable
 {
     private X509UniqueArray $certificates;

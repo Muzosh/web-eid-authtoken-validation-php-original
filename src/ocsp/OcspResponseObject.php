@@ -34,9 +34,11 @@ use phpseclib3\File\ASN1\Maps\Certificate;
 use phpseclib3\File\X509;
 use UnexpectedValueException;
 
+/**
+ * Object for handling ASN1 encoded OCSPResponse from RFC6960.
+ */
 class OcspResponseObject
 {
-    public const ID_PKIX_OCSP_BASIC_STRING = 'id-pkix-ocsp-basic';
     private array $ocspResponse = array();
 
     public function __construct(string $encodedBER)
@@ -47,6 +49,8 @@ class OcspResponseObject
             throw new UnexpectedValueException('Could not decode OCSP response. Base64 encoded response: '.base64_encode($encodedBER));
         }
 
+        // decodes also BasicOCSPResponse from response octet string
+		// TODO: this function assumes the responseType was basic, what about the other situation?
         $this->ocspResponse = ASN1::asn1map(
             $decodedResponse[0],
             OcspOCSPResponse::MAP,
@@ -76,7 +80,7 @@ class OcspResponseObject
 
     public function getBasicResponse(): BasicResponseObject
     {
-        if (self::ID_PKIX_OCSP_BASIC_STRING != $this->ocspResponse['responseBytes']['responseType']) {
+        if (OcspUtil::ID_PKIX_OCSP_BASIC_STRING != $this->ocspResponse['responseBytes']['responseType']) {
             throw new UnexpectedValueException(
                 'OcspResponse->responseBytes->responseType is not "id-pkix-ocsp-basic": '.
                 $this->ocspResponse['responseBytes']['responseType']

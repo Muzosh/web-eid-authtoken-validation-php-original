@@ -29,10 +29,14 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
 use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
-use muzosh\web_eid_authtoken_validation_php\util\DefaultClock;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
+use muzosh\web_eid_authtoken_validation_php\util\MockableClock;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use phpseclib3\File\X509;
+use Psr\Log\InvalidArgumentException;
+use Throwable;
 
 final class SubjectCertificateExpiryValidator implements SubjectCertificateValidator
 {
@@ -49,13 +53,16 @@ final class SubjectCertificateExpiryValidator implements SubjectCertificateValid
      * Checks the validity of the user certificate from the authentication token
      * and the validity of trusted CA certificates.
      *
-     * @param subjectCertificate user certificate to be validated
+     * @throws CertificateNotYetValidException
+     * @throws CertificateExpiredException
+     * @throws InvalidArgumentException
+     * @throws Throwable
      */
     public function validate(X509 $subjectCertificate): void
     {
         // Use the clock instance so that the date can be mocked in tests.
-        $now = DefaultClock::getInstance()->now();
-        CertificateValidator::trustedCACertificatesAreValidOnDate($this->trustedCertificates, $now);
+        $now = MockableClock::getInstance()->now();
+        CertificateValidator::trustedCertificatesAreValidOnDate($this->trustedCertificates, $now);
         $this->logger->debug('CA certificates are valid.');
         CertificateValidator::certificateIsValidOnDate($subjectCertificate, $now, 'User');
         $this->logger->debug('User certificate is valid.');

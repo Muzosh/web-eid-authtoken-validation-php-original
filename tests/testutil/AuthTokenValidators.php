@@ -82,7 +82,7 @@ final class AuthTokenValidators
         return (self::getAuthTokenValidatorBuilder(self::TOKEN_ORIGIN_URL, self::getCACertificates()))->withDesignatedOcspServiceConfiguration(OcspServiceMaker::getDesignatedOcspServiceConfiguration())->build();
     }
 
-    public static function getAuthTokenValidatorWithWrongTrustedCA(): AuthTokenValidator
+    public static function getAuthTokenValidatorWithWrongTrustedCertificate(): AuthTokenValidator
     {
         return self::getAuthTokenValidator(
             self::TOKEN_ORIGIN_URL,

@@ -31,7 +31,6 @@ use phpseclib3\File\X509;
 
 /**
  * Validators perform the actual user certificate validation actions.
- * <p>
  * They are used by AuthTokenValidatorImpl and are not part of the public API.
  */
 interface SubjectCertificateValidator

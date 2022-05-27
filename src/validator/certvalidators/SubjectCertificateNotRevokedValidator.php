@@ -28,7 +28,9 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
 use Monolog\Logger;
+use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateRevokedException;
 use muzosh\web_eid_authtoken_validation_php\ocsp\BasicResponseObject;
 use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspOCSPResponseStatus;
 use muzosh\web_eid_authtoken_validation_php\ocsp\OcspRequestObject;
@@ -39,10 +41,16 @@ use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspRequestBuilder;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspResponseValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspServiceProvider;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\OcspService;
+use phpseclib3\Exception\InconsistentSetupException;
+use phpseclib3\Exception\NoKeyLoadedException;
 use phpseclib3\File\ASN1;
 use phpseclib3\File\ASN1\Maps\Certificate;
 use phpseclib3\File\X509;
+use Psr\Log\InvalidArgumentException;
+use RangeException;
+use RuntimeException;
 use Throwable;
+use TypeError;
 
 final class SubjectCertificateNotRevokedValidator implements SubjectCertificateValidator
 {
@@ -63,17 +71,23 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         $this->ocspServiceProvider = $ocspServiceProvider;
     }
 
+    /**
+     * @throws UserCertificateOCSPCheckFailedException
+     */
     public function validate(X509 $subjectCertificate): void
     {
         try {
+            // Get service used for OCSP check (pre-defined provider or AIA)
             $ocspService = $this->ocspServiceProvider->getService($subjectCertificate);
 
             if (!$ocspService->doesSupportNonce()) {
                 $this->logger->debug('Disabling OCSP nonce extension');
             }
 
-            $certificateId = OcspUtil::getCertificateId($subjectCertificate, $this->trustValidator->getSubjectCertificateIssuerCertificate());
+            // build CertificateID
+            $certificateId = OcspUtil::buildCertificateId($subjectCertificate, $this->trustValidator->getSubjectCertificateIssuerCertificate());
 
+            // build OcspRequestObject
             $request = (new OcspRequestBuilder())
                 ->withCertificateId($certificateId)
                 ->enableOcspNonce($ocspService->doesSupportNonce())
@@ -81,13 +95,21 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         ;
 
             $this->logger->debug('Sending OCSP request');
+            // sent HTTP request with OCSP request
             $response = $this->ocspClient->request($ocspService->getAccessLocation(), $request->getEncodedDER());
+
+            // if response is not 'successful'
             if ($response->getStatus() != OcspOCSPResponseStatus::MAP['mapping'][0]) {
                 throw new UserCertificateOCSPCheckFailedException('Response status: '.$response->getStatus());
             }
 
+            // extract BasicOCSPResponse
             $basicResponse = $response->getBasicResponse();
+
+            // verify it
             $this->verifyOcspResponse($basicResponse, $ocspService, $certificateId);
+
+            // check nonce
             if ($ocspService->doesSupportNonce()) {
                 $this->checkNonce($request, $basicResponse);
             }
@@ -96,6 +118,18 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         }
     }
 
+    /**
+     * @throws UserCertificateOCSPCheckFailedException
+     * @throws RuntimeException
+     * @throws RangeException
+     * @throws TypeError
+     * @throws NoKeyLoadedException
+     * @throws InconsistentSetupException
+     * @throws OCSPCertificateException
+     * @throws UserCertificateRevokedException
+     * @throws InvalidArgumentException
+     * @throws Throwable
+     */
     private function verifyOcspResponse(BasicResponseObject $basicResponse, OcspService $ocspService, array $requestCertificateId): void
     {
         // The verification algorithm follows RFC 2560, https://www.ietf.org/rfc/rfc2560.txt.

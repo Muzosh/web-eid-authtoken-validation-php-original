@@ -25,22 +25,40 @@
 
 declare(strict_types=1);
 
-namespace muzosh\web_eid_authtoken_validation_php\ocsp;
+namespace muzosh\web_eid_authtoken_validation_php\util;
 
 use BadFunctionCallException;
 use phpseclib3\File\ASN1;
 use phpseclib3\File\ASN1\Maps\SubjectPublicKeyInfo;
+use RangeException;
+use TypeError;
 use UnexpectedValueException;
 
+/**
+ * Utility class for handling ASN1 related operations
+ */
 final class ASN1Util
 {
     public const ID_PKIX_OCSP_NONCE = '1.3.6.1.5.5.7.48.1.2';
 
+    /**
+     * Don't call this, all functions are static.
+     *
+     * @throws BadFunctionCallException
+     *
+     * @return never
+     */
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');
     }
 
+    /**
+     * VERY IMPORTANT FUNCTION\
+     * During whole validation process, we rely on internal phpseclib3\File\ASN1 list of known OIDs.\
+     * If something is not working, there is high probability the OID mapping is missing, so it can be added here.\
+     * CALL THIS FUNCTION AT THE START OF VALIDATION PROCESS.
+     */
     public static function loadOIDs(): void
     {
         // these were discovered during testing as missing
@@ -56,45 +74,56 @@ final class ASN1Util
         ));
     }
 
+    /**
+     * SubjectPublicKeyInfo BER contains ASN1 'algorithm' and 'subjectPublicKey'.
+     * We only need the second part.
+     *
+     * @throws RangeException
+     * @throws TypeError
+     */
     public static function extractKeyData(string $publicKey): string
     {
         $extractedBER = ASN1::extractBER($publicKey);
         $decodedBER = ASN1::decodeBER($extractedBER);
 
-        /*
-        SubjectPublicKeyInfo BER contains ASN1 'algorithm' and 'subjectPublicKey'.
-        We only need the second part.
-        */
         $onlySubjectPublicKey = ASN1::asn1map($decodedBER[0], SubjectPublicKeyInfo::MAP)['subjectPublicKey'];
 
         // Integers in ASN1 lead with 0 byte indicating the integer is positive
         // We need to remove this byte so it can be parsed correctly
-        return self::removeIntegerZeroPaddingFromFirstByte($onlySubjectPublicKey);
+        return self::removeFirstByte($onlySubjectPublicKey);
     }
 
-    public static function removeIntegerZeroPaddingFromFirstByte($encoded): string
+    /**
+     * Converts bytestring into array of integers, removes first value from list
+     * and returns this list converted back to bytestring.
+     *
+     * @param string $encoded
+     *
+     * @return string returns $encoded value without the first byte
+     */
+    public static function removeFirstByte($encoded): string
     {
         return pack('c*', ...array_slice(unpack('c*', $encoded), 1));
     }
 
-    // this function is translated from Java io.jsonwebtoken.impl.crypto.EllipticCurveProvider
-    /*
-    * Copyright (C) 2015 jsonwebtoken.io
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    *     http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    * See the License for the specific language governing permissions and
-    * limitations under the License.
-    */
-    // In case of ECDSA, the eID card outputs raw R||S, so we need to trascode it to DER.
-    // currently not used - might be used in src/validator/AuthTokenSignatureValidator.php:validate()
+    /** In case of ECDSA, the eID card outputs raw R||S, so we need to trascode it to DER.
+     * CURRENTLY NOT USED - might be used in src/validator/AuthTokenSignatureValidator.php:validate().\
+     * \
+     * This function is translated from Java io.jsonwebtoken.impl.crypto.EllipticCurveProvider:\
+     * Copyright (C) 2015 jsonwebtoken.io.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     *
+     * @throws UnexpectedValueException
+     */
     public static function transcodeSignatureToDER(array $signature): array
     {
         $rawLen = count($signature) / 2;

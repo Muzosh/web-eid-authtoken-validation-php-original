@@ -32,8 +32,18 @@ use DateTime;
 use DateTimeZone;
 use InvalidArgumentException;
 
+/**
+ * Utility class for handling date and time related operations.
+ */
 final class DateAndTime
 {
+    /**
+     * Don't call this, all functions are static.
+     *
+     * @throws BadFunctionCallException
+     *
+     * @return never
+     */
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');
@@ -61,16 +71,19 @@ final class DateAndTime
     }
 }
 
-final class DefaultClock
+/**
+ * This class is written so it can be used in unit tests.
+ */
+final class MockableClock
 {
-    private static DefaultClock $instance;
+    private static MockableClock $instance;
 
     private DateTime $mockedClock;
 
     public static function getInstance()
     {
         if (!isset(self::$instance)) {
-            self::$instance = new DefaultClock();
+            self::$instance = new MockableClock();
         }
 
         return self::$instance;
@@ -85,13 +98,13 @@ final class DefaultClock
         return new DateTime();
     }
 
-    // used for unit testing
+    /** used for unit testing */
     public function setMockedClock(DateTime $mockedClock): void
     {
         $this->mockedClock = $mockedClock;
     }
 
-    // used for unit testing
+    /** used for unit testing */
     public function resetMockedClock(): void
     {
         unset($this->mockedClock);

@@ -29,19 +29,29 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 
 use BadFunctionCallException;
 
+/**
+ * Utility class for handling base64 related operations.
+ */
 final class Base64Util
 {
+    /**
+     * Don't call this, all functions are static.
+     *
+     * @throws BadFunctionCallException
+     *
+     * @return never
+     */
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');
     }
 
-    public static function decodeBase64ToArray(string $base64Str): array
+    public static function decodeBase64ToIntegerArray(string $base64Str): array
     {
         return array_values(unpack('c*', base64_decode($base64Str)));
     }
 
-    public static function encodeBase64FromArray(array $bytes): string
+    public static function encodeBase64FromIntegerArray(array $bytes): string
     {
         return base64_encode(pack('c*', ...$bytes));
     }

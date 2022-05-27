@@ -30,14 +30,37 @@ namespace muzosh\web_eid_authtoken_validation_php\certificate;
 use BadFunctionCallException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateDecodingException;
 use phpseclib3\File\X509;
+use RangeException;
+use RuntimeException;
+use TypeError;
 
+/**
+ * Utility class for loading certificates.
+ */
 final class CertificateLoader
 {
+    /**
+     * Don't call this, all functions are static.
+     *
+     * @throws BadFunctionCallException
+     *
+     * @return never
+     */
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');
     }
 
+    /**
+	 * Loads certificate files from given path into array of phpseclib3\File\X509 objects
+	 * @param string $certPath directory path where to look for certificates
+	 * @param string ...$certificateNames multiple file names of certificates to load
+	 * @return array
+	 * @throws RangeException
+	 * @throws TypeError
+	 * @throws RuntimeException
+	 * @throws CertificateDecodingException
+	 */
     public static function loadCertificatesFromPath(string $certPath, string ...$certificateNames): array
     {
         $caCertificates = array();

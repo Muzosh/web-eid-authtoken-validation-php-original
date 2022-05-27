@@ -29,6 +29,9 @@ namespace muzosh\web_eid_authtoken_validation_php\challenge;
 
 use DateTime;
 
+/**
+ * Object holder for ChallengeNonce.
+ */
 class ChallengeNonce
 {
     private string $base64EncodedNonce;

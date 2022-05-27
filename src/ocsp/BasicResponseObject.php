@@ -30,8 +30,12 @@ namespace muzosh\web_eid_authtoken_validation_php\ocsp;
 use DateTime;
 use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspTbsResponseData;
+use muzosh\web_eid_authtoken_validation_php\util\ASN1Util;
 use phpseclib3\File\ASN1;
 
+/**
+ * Object for handling ASN1 encoded BasicOCSPResponse from RFC6960.
+ */
 class BasicResponseObject
 {
     private array $ocspBasicResponse = array();
@@ -53,7 +57,7 @@ class BasicResponseObject
 
     public function getSignature(): string
     {
-        return ASN1Util::removeIntegerZeroPaddingFromFirstByte($this->ocspBasicResponse['signature']);
+        return ASN1Util::removeFirstByte($this->ocspBasicResponse['signature']);
     }
 
     public function getEncodedResponseData(): string
@@ -66,10 +70,14 @@ class BasicResponseObject
         return new DateTime($this->ocspBasicResponse['tbsResponseData']['producedAt']);
     }
 
+    /**
+     * ! currently works only for shaXXXWithXXX (example: sha256WithRSAEncryption)\
+     * this method assumes the ocspBasicResponse translated the OID to algorithm name during its creation.
+     *
+     * @throws OCSPCertificateException
+     */
     public function getSignatureAlgorithm(): string
     {
-        // ! currently works only for shaXXXWithXXX (example: sha256WithRSAEncryption)
-        // this method assumes the ocspBasicResponse translated OID to algorithm name during its creation
         $algorithm = strtolower($this->ocspBasicResponse['signatureAlgorithm']['algorithm']);
 
         if (false !== ($pos = strpos($algorithm, 'sha3-'))) {
@@ -85,6 +93,11 @@ class BasicResponseObject
         );
     }
 
+	/**
+	 * Get ID_PKIX_OCSP_NONCE extension value
+	 * @return string
+	 * @throws OCSPCertificateException
+	 */
     public function getNonceExtension(): string
     {
         $value = current(

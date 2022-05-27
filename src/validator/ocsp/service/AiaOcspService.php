@@ -29,12 +29,22 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp\service;
 
 use DateTime;
 use GuzzleHttp\Psr7\Uri;
+use LengthException;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspResponseValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspUrl;
+use phpseclib3\Exception\InsufficientSetupException;
+use phpseclib3\Exception\UnsupportedAlgorithmException;
 use phpseclib3\File\X509;
+use RangeException;
+use RuntimeException;
+use TypeError;
 
 /**
  * An OCSP service that uses the responders from the Certificates' Authority Information Access (AIA) extension.
@@ -62,14 +72,29 @@ class AiaOcspService implements OcspService
         return $this->url;
     }
 
+    /**
+     * @throws CertificateNotYetValidException
+     * @throws CertificateExpiredException
+     * @throws InsufficientSetupException
+     * @throws LengthException
+     * @throws TypeError
+     * @throws OCSPCertificateException
+     * @throws RangeException
+     * @throws RuntimeException
+     * @throws UnsupportedAlgorithmException
+     * @throws CertificateNotTrustedException
+     */
     public function validateResponderCertificate(X509 $cert, DateTime $producedAt): void
     {
         CertificateValidator::certificateIsValidOnDate($cert, $producedAt, 'AIA OCSP responder');
         // Trusted certificates' validity has been already verified in validateCertificateExpiry().
         OcspResponseValidator::validateHasSigningExtension($cert);
-        CertificateValidator::validateIsSignedByTrustedCA($cert, $this->trustedCertificates); // , $this->trustedCACertificateCertStore, $this->producedAt);
+        CertificateValidator::validateIsSignedByTrustedCertificate($cert, $this->trustedCertificates);
     }
 
+    /**
+     * @throws UserCertificateOCSPCheckFailedException
+     */
     private static function getOcspAiaUrlFromCertificate(X509 $certificate): Uri
     {
         $uri = OcspUrl::getOcspUri($certificate);

@@ -28,7 +28,9 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\util;
 
 use BadFunctionCallException;
-
+/**
+ * Utility class for specifying subject certificate policy ID constants
+ */
 final class SubjectCertificatePolicyIds
 {
     private const ESTEID_SK_2015_MOBILE_ID_POLICY_PREFIX = '1.3.6.1.4.1.10015.1.3';
@@ -38,6 +40,13 @@ final class SubjectCertificatePolicyIds
     public static $ESTEID_SK_2015_MOBILE_ID_POLICY_V2 = self::ESTEID_SK_2015_MOBILE_ID_POLICY_PREFIX.'.2';
     public static $ESTEID_SK_2015_MOBILE_ID_POLICY_V3 = self::ESTEID_SK_2015_MOBILE_ID_POLICY_PREFIX.'.3';
 
+	/**
+     * Don't call this, all functions are static.
+     *
+     * @throws BadFunctionCallException
+     *
+     * @return never
+     */
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');

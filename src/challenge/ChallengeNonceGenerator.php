@@ -32,7 +32,10 @@ namespace muzosh\web_eid_authtoken_validation_php\challenge;
  */
 interface ChallengeNonceGenerator
 {
-    public const NONCE_LENGTH = 32;
+	/** Integer indicating the length of bytes for challenge nonce
+	 * @var int
+	 */
+    public const NONCE_LENGTH = CONFIG['nonce_length'];
 
     /**
      * Generates a cryptographic nonce, a large random number that can be used only once,

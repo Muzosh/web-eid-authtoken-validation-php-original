@@ -77,10 +77,10 @@ class AuthTokenValidatorBuilder
      */
     public function withTrustedCertificateAuthorities(X509 ...$certificates): AuthTokenValidatorBuilder
     {
-        array_push($this->configuration->getTrustedCACertificates(), ...$certificates);
+        array_push($this->configuration->getTrustedCertificates(), ...$certificates);
 
         $this->logger->debug(
-            'Trusted intermediate certificate authorities added: '.json_encode(X509Array::getSubjectDNs(null, ...$this->configuration->getTrustedCACertificates()))
+            'Trusted intermediate certificate authorities added: '.json_encode(X509Array::getSubjectDNs(null, ...$this->configuration->getTrustedCertificates()))
         );
 
         return $this;

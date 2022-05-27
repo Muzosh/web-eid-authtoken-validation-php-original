@@ -39,6 +39,11 @@ class ChallengeNonceGeneratorBuilder
     private $secureRandom;
     private int $ttlSeconds;
 
+    /**
+     * Defaults:\
+     * TTL = 5 minutes\
+     * secure random = PHP random_bytes function.
+     */
     public function __construct()
     {
         $this->ttlSeconds = 300; // 5 minutes
@@ -52,9 +57,9 @@ class ChallengeNonceGeneratorBuilder
      * Override default nonce time-to-live duration.
      * When the time-to-live passes, the nonce is considered to be expired.
      *
-     * @param duration time-to-live duration
+     * @param int $seconds time-to-live duration in seconds
      *
-     * @return current builder instance
+     * @return ChallengeNonceGeneratorBuilder builder instance
      */
     public function withNonceTtl(int $seconds): ChallengeNonceGeneratorBuilder
     {
@@ -66,9 +71,9 @@ class ChallengeNonceGeneratorBuilder
     /**
      * Sets the challenge nonce store where the generated challenge nonces will be stored.
      *
-     * @param challengeNonceStore challenge nonce store
+     * @param ChallengeNonceStore challenge nonce store
      *
-     * @return current builder instance
+     * @return ChallengeNonceGeneratorBuilder builder instance
      */
     public function withChallengeNonceStore(ChallengeNonceStore $challengeNonceStore): ChallengeNonceGeneratorBuilder
     {
@@ -80,9 +85,9 @@ class ChallengeNonceGeneratorBuilder
     /**
      * Sets the source of random bytes for the nonce.
      *
-     * @param secureRandom secure random generator
+     * @param callable $secureRandom function which returns random bytes with number of bytes as input
      *
-     * @return current builder instance
+     * @return ChallengeNonceGeneratorBuilder builder instance
      */
     public function withSecureRandom(callable $secureRandom): ChallengeNonceGeneratorBuilder
     {
@@ -94,6 +99,8 @@ class ChallengeNonceGeneratorBuilder
     /**
      * Validates the configuration and builds the ChallengeNonceGenerator instance.
      *
+     * @throws InvalidArgumentException
+     *
      * @return ChallengeNonceGenerator new challenge nonce generator instance
      */
     public function build(): ChallengeNonceGenerator
@@ -103,6 +110,11 @@ class ChallengeNonceGeneratorBuilder
         return new ChallengeNonceGeneratorImpl($this->challengeNonceStore, $this->secureRandom, $this->ttlSeconds);
     }
 
+    /**
+     * Validate current instance parameters.
+     *
+     * @throws InvalidArgumentException
+     */
     private function validateParameters(): void
     {
         if (is_null($this->challengeNonceStore)) {

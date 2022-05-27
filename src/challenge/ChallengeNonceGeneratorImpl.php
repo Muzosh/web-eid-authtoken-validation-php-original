@@ -30,12 +30,18 @@ namespace muzosh\web_eid_authtoken_validation_php\challenge;
 use DateInterval;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
 
+/**
+ * Default implementation of ChallengeNonceGenerator.
+ */
 final class ChallengeNonceGeneratorImpl implements ChallengeNonceGenerator
 {
     private ChallengeNonceStore $challengeNonceStore;
     private $secureRandom;
     private int $ttlSeconds;
 
+    /**
+     * All parameters are used in generateAndStoreNonce function.
+     */
     public function __construct(ChallengeNonceStore $challengeNonceStore, callable $secureRandom, int $ttlSeconds)
     {
         $this->challengeNonceStore = $challengeNonceStore;
@@ -43,6 +49,9 @@ final class ChallengeNonceGeneratorImpl implements ChallengeNonceGenerator
         $this->ttlSeconds = $ttlSeconds;
     }
 
+    /**
+     * This function is called by external application that wish to generate and store a challenge nonce.
+     */
     public function generateAndStoreNonce(): ChallengeNonce
     {
         $nonceString = call_user_func($this->secureRandom, self::NONCE_LENGTH);

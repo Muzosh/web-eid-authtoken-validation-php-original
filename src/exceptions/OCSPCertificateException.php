@@ -28,7 +28,9 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\exceptions;
 
 use Throwable;
-
+/**
+ * Thrown when the there was some error with certificate during OCSP process.
+ */
 class OCSPCertificateException extends AuthTokenException
 {
     public function __construct(string $message, Throwable $exception = null)

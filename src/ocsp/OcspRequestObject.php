@@ -28,14 +28,18 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\ocsp;
 
 use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspOCSPRequest;
+use muzosh\web_eid_authtoken_validation_php\util\ASN1Util;
 use phpseclib3\File\ASN1;
 
+/**
+ * Object for handling ASN1 encoded OCSPRequest from RFC 6960.
+ */
 class OcspRequestObject
 {
     private array $ocspRequest = array();
 
     /**
-     * Default Constructor.
+     * Initialize base array skeleton.
      *
      * @return OcspRequestObject
      */
@@ -56,6 +60,11 @@ class OcspRequestObject
         return ASN1::encodeDER($this->ocspRequest, OcspOCSPRequest::MAP);
     }
 
+	/**
+	 * Insert ocsp request with CertificateID
+	 * @param array $certificateId can be built by OcspUtil::getCertificateId() function
+	 * @return void
+	 */
     public function addRequest(array $certificateId): void
     {
         $request = array(

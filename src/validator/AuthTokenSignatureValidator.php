@@ -32,7 +32,7 @@ use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenSignatureValidationException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNullOrEmptyException;
-use muzosh\web_eid_authtoken_validation_php\ocsp\ASN1Util;
+use muzosh\web_eid_authtoken_validation_php\util\ASN1Util;
 use muzosh\web_eid_authtoken_validation_php\util\Base64Util;
 use phpseclib3\Crypt\Common\PublicKey;
 use phpseclib3\File\ASN1;

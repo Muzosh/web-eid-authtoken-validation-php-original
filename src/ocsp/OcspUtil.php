@@ -30,18 +30,39 @@ namespace muzosh\web_eid_authtoken_validation_php\ocsp;
 use BadFunctionCallException;
 use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
+use muzosh\web_eid_authtoken_validation_php\util\ASN1Util;
 use phpseclib3\File\ASN1;
 use phpseclib3\File\ASN1\Maps\Name;
 use phpseclib3\File\X509;
+use RuntimeException;
 
+/**
+ * Utility class for handling OCSP related operations.
+ */
 final class OcspUtil
 {
+    public const ID_PKIX_OCSP_BASIC_STRING = 'id-pkix-ocsp-basic';
+
+    /**
+     * Don't call this, all functions are static.
+     *
+     * @throws BadFunctionCallException
+     *
+     * @return never
+     */
     public function __construct()
     {
         throw new BadFunctionCallException('Utility class');
     }
 
-    public static function getCertificateId(X509 $subjectCert, X509 $issuerCert, string $hashAlg = 'sha1'): array
+    /**
+     * Build CertificateID required for OCSP requests. In default uses SHA1 hash for speed.
+     *
+     * @throws OCSPCertificateException
+     * @throws RuntimeException
+     * @throws InvalidArgumentException
+     */
+    public static function buildCertificateId(X509 $subjectCert, X509 $issuerCert, string $hashAlg = 'sha1'): array
     {
         $certId = array(
             'hashAlgorithm' => array(),

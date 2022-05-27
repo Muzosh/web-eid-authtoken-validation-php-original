@@ -28,7 +28,12 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\certificate;
 
 use BadFunctionCallException;
+use BadMethodCallException;
+use LengthException;
+use phpseclib3\Exception\InsufficientSetupException;
 use phpseclib3\File\X509;
+use SodiumException;
+use TypeError;
 use UnexpectedValueException;
 
 /* in java code there is some special x500 formating?
@@ -39,13 +44,17 @@ Example value from java formatting (notice the backslashes):
 * this probably is not issue in PHP - it might however raise some compatibility issues when using both validation libraries in some workflow
 */
 
+/**
+ * Utility class for extracting data from phpseclib3\File\X509 object.
+ */
 final class CertificateData
 {
     /**
-     * __construct
      * Don't call this, all functions are static.
      *
      * @throws BadFunctionCallException
+     *
+     * @return never
      */
     public function __construct()
     {
@@ -53,7 +62,9 @@ final class CertificateData
     }
 
     /**
-     * getSubjectCN.
+     * Gets id-at-commonName from x509 certificate.
+     *
+     * @throws UnexpectedValueException
      */
     public static function getSubjectCN(X509 $certificate): string
     {
@@ -61,9 +72,9 @@ final class CertificateData
     }
 
     /**
-     * getSubjectSurname.
+     * Gets id-at-surname from x509 certificate.
      *
-     * @param mixed $certificate
+     * @throws UnexpectedValueException
      */
     public static function getSubjectSurname(X509 $certificate): string
     {
@@ -71,9 +82,9 @@ final class CertificateData
     }
 
     /**
-     * getSubjectGivenName.
+     * Gets id-at-surname from x509 certificate.
      *
-     * @param mixed $certificate
+     * @throws UnexpectedValueException
      */
     public static function getSubjectGivenName(X509 $certificate): string
     {
@@ -81,19 +92,19 @@ final class CertificateData
     }
 
     /**
-     * getSubjectIdCode.
+     * Gets id-at-serialNumber from x509 certificate.
      *
-     * @param mixed $certificate
+     * @throws UnexpectedValueException
      */
-    public static function getSubjectIdCode(X509 $certificate): string
+    public static function getSubjectSerialNumber(X509 $certificate): string
     {
         return self::getSubjectField($certificate, 'id-at-serialNumber');
     }
 
     /**
-     * getSubjectCountryCode.
+     * Gets id-at-countryName from x509 certificate.
      *
-     * @param mixed $certificate
+     * @throws UnexpectedValueException
      */
     public static function getSubjectCountryCode(X509 $certificate): string
     {
@@ -101,10 +112,14 @@ final class CertificateData
     }
 
     /**
-     * self::getSubjectField.
+     * Gets specified subject field.
      *
-     * @param mixed $certificate
-     * @param mixed $fieldIdentifier
+     * @throws InsufficientSetupException
+     * @throws LengthException
+     * @throws BadMethodCallException
+     * @throws SodiumException
+     * @throws TypeError
+     * @throws UnexpectedValueException
      */
     private static function getSubjectField(X509 $certificate, string $fieldIdentifier): string
     {
