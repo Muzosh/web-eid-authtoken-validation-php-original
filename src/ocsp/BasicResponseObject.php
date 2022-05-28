@@ -31,7 +31,10 @@ use DateTime;
 use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspTbsResponseData;
 use muzosh\web_eid_authtoken_validation_php\util\ASN1Util;
+use muzosh\web_eid_authtoken_validation_php\util\X509Array;
 use phpseclib3\File\ASN1;
+use phpseclib3\File\ASN1\Maps\Certificate;
+use phpseclib3\File\X509;
 
 /**
  * Object for handling ASN1 encoded BasicOCSPResponse from RFC6960.
@@ -39,10 +42,32 @@ use phpseclib3\File\ASN1;
 class BasicResponseObject
 {
     private array $ocspBasicResponse = array();
+    private X509Array $responderCerts;
 
     public function __construct(array $ocspBasicResponse)
     {
         $this->ocspBasicResponse = $ocspBasicResponse;
+        $this->responderCerts = new X509Array();
+
+		/*
+		In some cases the responder certs get decoded weirdly.
+		It is safer to immediately save certificates into X509 array and work with these objects
+		in the future via self::getResponderCerts().
+        */
+        if (isset($this->ocspBasicResponse['certs'])) {
+            foreach ($this->ocspBasicResponse['certs'] as $cert) {
+                $x509 = new X509();
+				/*
+				We need to DER encode each responder certificate array as there exists some
+				more loading in X509->loadX509 method, which is not executed when loading just basic array.
+				For example without this the publicKey would not be in PEM format and X509->getPublicKey()
+				will throw error. It also maps out the extensions from BIT STRING
+				*/
+                $x509->loadX509(ASN1::encodeDER($cert, Certificate::MAP));
+                $this->responderCerts->pushItem($x509);
+            }
+            unset($x509);
+        }
     }
 
     public function getResponses(): array
@@ -50,13 +75,15 @@ class BasicResponseObject
         return $this->ocspBasicResponse['tbsResponseData']['responses'];
     }
 
-    public function getCerts(): array
+    public function getResponderCerts(): X509Array
     {
-        return $this->ocspBasicResponse['certs'];
+        return $this->responderCerts;
     }
 
     public function getSignature(): string
     {
+		// Integers in ASN1 lead with 0 byte indicating the integer is positive
+        // We need to remove this byte so it can be parsed correctly
         return ASN1Util::removeFirstByte($this->ocspBasicResponse['signature']);
     }
 
@@ -93,11 +120,11 @@ class BasicResponseObject
         );
     }
 
-	/**
-	 * Get ID_PKIX_OCSP_NONCE extension value
-	 * @return string
-	 * @throws OCSPCertificateException
-	 */
+    /**
+     * Get ID_PKIX_OCSP_NONCE extension value.
+     *
+     * @throws OCSPCertificateException
+     */
     public function getNonceExtension(): string
     {
         $value = current(

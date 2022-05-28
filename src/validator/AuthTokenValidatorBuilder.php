@@ -28,11 +28,14 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
 use GuzzleHttp\Psr7\Uri;
+use InvalidArgumentException as GlobalInvalidArgumentException;
 use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use muzosh\web_eid_authtoken_validation_php\util\X509Array;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\DesignatedOcspServiceConfiguration;
 use phpseclib3\File\X509;
+use Psr\Log\InvalidArgumentException;
+use Throwable;
 
 class AuthTokenValidatorBuilder
 {
@@ -47,13 +50,14 @@ class AuthTokenValidatorBuilder
 
     /**
      * Sets the expected site origin, i.e. the domain that the application is running on.
-     * <p>
-     * Origin is a mandatory configuration parameter.
      *
-     * @param origin origin URL as defined in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Location/origin">MDN</a>,
-     *               in the form of {@code <scheme> "://" <hostname> [ ":" <port> ]}
+     * @param Uri $origin origin URL as defined in MDN,
+     *                    in the form of {@code <scheme> "://" <hostname> [ ":" <port> ]}
      *
-     * @return the builder instance for method chaining
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Location/origin MDN
+     *
+     * @throws InvalidArgumentException
+     * @throws Throwable
      */
     public function withSiteOrigin(URI $origin): AuthTokenValidatorBuilder
     {
@@ -67,13 +71,15 @@ class AuthTokenValidatorBuilder
      * Adds the given certificates to the list of trusted intermediate Certificate Authorities
      * used during validation of subject and OCSP responder certificates.
      * In order for a user or OCSP responder certificate to be considered valid, the certificate
-     * of the issuer of the certificate must be present in this list.
-     * <p>
+     * of the issuer of the certificate must be present in this list.\
      * At least one trusted intermediate Certificate Authority must be provided as a mandatory configuration parameter.
      *
-     * @param certificates trusted intermediate Certificate Authority certificates
+     * @param X509[] $certificates trusted intermediate Certificate Authority certificates
      *
-     * @return the builder instance for method chaining
+     * @throws InvalidArgumentException
+     * @throws Throwable
+     *
+     * @return AuthTokenValidatorBuilder the builder instance for method chaining
      */
     public function withTrustedCertificateAuthorities(X509 ...$certificates): AuthTokenValidatorBuilder
     {
@@ -91,9 +97,9 @@ class AuthTokenValidatorBuilder
      * In order for the user certificate to be considered valid, it must not contain any policies
      * present in this list.
      *
-     * @param policies disallowed user certificate policies
+     * @param string ...$policies disallowed user certificate policies
      *
-     * @return the builder instance for method chaining
+     * @return AuthTokenValidatorBuilder the builder instance for method chaining
      */
     public function withDisallowedCertificatePolicyIds(string ...$policies): AuthTokenValidatorBuilder
     {
@@ -105,14 +111,14 @@ class AuthTokenValidatorBuilder
 
     /**
      * Turns off user certificate revocation check with OCSP.
-     * <p>
-     * <b>Turning off user certificate revocation check with OCSP is dangerous and should be
-     * used only in exceptional circumstances.</b>
+     *
+     * Turning off user certificate revocation check with OCSP is dangerous and should be
+     * used only in exceptional circumstances.
      * By default, the revocation check is turned on.
      *
-     * @return the builder instance for method chaining
+     * @return AuthTokenValidatorBuilder the builder instance for method chaining
      */
-    public function withoutUserCertificateRevocationCheckWithOcsp()
+    public function withoutUserCertificateRevocationCheckWithOcsp(): AuthTokenValidatorBuilder
     {
         $this->configuration->setUserCertificateRevocationCheckWithOcspDisabled();
         $this->logger->warning('User certificate revocation check with OCSP is disabled, '.'you should turn off the revocation check only in exceptional circumstances');
@@ -122,12 +128,12 @@ class AuthTokenValidatorBuilder
 
     /**
      * Sets both the connection and response timeout of user certificate revocation check OCSP requests.
-     * <p>
+     *
      * This is an optional configuration parameter, the default is 5 seconds.
      *
-     * @param ocspRequestTimeout the duration of OCSP request connection and response timeout
+     * @param int $ocspRequestTimeout the duration of OCSP request connection and response timeout
      *
-     * @return the builder instance for method chaining
+     * @return AuthTokenValidatorBuilder the builder instance for method chaining
      */
     public function withOcspRequestTimeout(int $ocspRequestTimeoutSeconds): AuthTokenValidatorBuilder
     {
@@ -141,9 +147,9 @@ class AuthTokenValidatorBuilder
      * Adds the given URLs to the list of OCSP URLs for which the nonce protocol extension will be disabled.
      * The OCSP URL is extracted from the user certificate and some OCSP services don't support the nonce extension.
      *
-     * @param urls OCSP URLs for which the nonce protocol extension will be disabled
+     * @param URI ...$uris urls OCSP URLs for which the nonce protocol extension will be disabled
      *
-     * @return the builder instance for method chaining
+     * @return AuthTokenValidatorBuilder the builder instance for method chaining
      */
     public function withNonceDisabledOcspUrls(URI ...$uris): AuthTokenValidatorBuilder
     {
@@ -161,9 +167,9 @@ class AuthTokenValidatorBuilder
      * supported by the service, falling back to the default OCSP service access location from
      * the certificate's AIA extension if not.
      *
-     * @param serviceConfiguration configuration of the designated OCSP service
+     * @param DesignatedOcspServiceConfiguration serviceConfiguration configuration of the designated OCSP service
      *
-     * @return the builder instance for method chaining
+     * @return AuthTokenValidatorBuilder the builder instance for method chaining
      */
     public function withDesignatedOcspServiceConfiguration(DesignatedOcspServiceConfiguration $serviceConfiguration): AuthTokenValidatorBuilder
     {
@@ -173,14 +179,12 @@ class AuthTokenValidatorBuilder
         return $this;
     }
 
-    /**
-     * Validates the configuration and builds the {@link AuthTokenValidator} object with it.
-     * The returned {@link AuthTokenValidator} object is immutable/thread-safe.
-     *
-     * @throws NullPointerException     when required parameters are null
-     * @throws IllegalArgumentException when any parameter is invalid
-     * @throws RuntimeException         when JCE configuration is invalid
-     */
+	/**
+	 * Validates the configuration and builds the AuthTokenValidator object with it.
+     * The returned AuthTokenValidator object is immutable/thread-safe.
+	 * @return AuthTokenValidator
+	 * @throws GlobalInvalidArgumentException
+	 */
     public function build(): AuthTokenValidator
     {
         $this->configuration->validate();

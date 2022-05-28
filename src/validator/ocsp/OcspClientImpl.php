@@ -53,6 +53,7 @@ class OcspClientImpl implements OcspClient
 
     public static function build(int $ocspRequestTimeoutSeconds): OcspClient
     {
+        // build new OcspClientImpl with GuzzleHttp\Client
         return new OcspClientImpl(
             new Client(array(
                 RequestOptions::ALLOW_REDIRECTS => false,
@@ -64,27 +65,36 @@ class OcspClientImpl implements OcspClient
 
     public function request(Uri $uri, string $encodedOcspRequest): OcspResponseObject
     {
-        $request = new Request('POST', $uri, array(
-            'Content-Type' => self::OCSP_REQUEST_TYPE,
-            'charset' => 'utf-8',
-        ), $encodedOcspRequest);
+        // create new request
+        $request = new Request(
+            'POST',
+            $uri,
+            // headers
+            array(
+                'Content-Type' => self::OCSP_REQUEST_TYPE,
+                'charset' => 'utf-8',
+            ),
+            $encodedOcspRequest
+        );
 
+        // send and get response
         $response = $this->httpClient->send($request);
 
+        // check status code
         $statusCode = $response->getStatusCode();
-
         if ($statusCode < 200 && $statusCode > 299) {
             throw new UserCertificateOCSPCheckFailedException('OCSP request was not successful, response: http/'.$response->getProtocolVersion().' - '.$statusCode.' - '.$response->getReasonPhrase().' - '.$request->getUri());
         }
 
         $this->logger->debug('OCSP response: http/'.$response->getProtocolVersion().' - '.$statusCode.' - '.$response->getReasonPhrase().' - '.$request->getUri());
 
+        // check header
         $contentType = $response->getHeader('Content-Type');
-
         if (empty($contentType) || false === strpos($contentType[0], self::OCSP_RESPONSE_TYPE)) {
             throw new UserCertificateOCSPCheckFailedException('OCSP response content type is not '.self::OCSP_RESPONSE_TYPE);
         }
 
+        // get new OcspResponseObject from encoded DER
         return new OcspResponseObject($response->getBody()->getContents());
     }
 }

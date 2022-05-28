@@ -42,7 +42,7 @@ class WebEidAuthToken
     /**
      * Constructs the token object from json string.
      *
-     * @throws UnexpectedValueException
+     * @throws UnexpectedValueException some key in json is array or int
      *
      * @return null|void null in case of wrong json encoding
      */

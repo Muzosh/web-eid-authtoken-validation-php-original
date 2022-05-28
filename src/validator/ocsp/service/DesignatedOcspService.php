@@ -30,6 +30,8 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp\service;
 use DateTime;
 use GuzzleHttp\Psr7\Uri;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateExpiredException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotYetValidException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use phpseclib3\File\X509;
 
@@ -55,6 +57,14 @@ class DesignatedOcspService implements OcspService
         return $this->configuration->getOcspServiceAccessLocation();
     }
 
+    /**
+     * Validates responder certificate (it must be the same as
+     * designated certificate and must be valid on specified date).
+     *
+     * @throws OCSPCertificateException
+     * @throws CertificateNotYetValidException
+     * @throws CertificateExpiredException
+     */
     public function validateResponderCertificate(X509 $cert, DateTime $producedAt): void
     {
         // Certificate pinning is implemented simply by comparing the certificates or their public keys,

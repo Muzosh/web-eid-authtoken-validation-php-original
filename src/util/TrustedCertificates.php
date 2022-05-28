@@ -30,8 +30,8 @@ namespace muzosh\web_eid_authtoken_validation_php\util;
 use Countable;
 
 /**
- * This class represents a typed set. It accepts only phpseclib3\File\X509 objects and
- * there cannot be duplicates.\
+ * This class represents an IMMUTABLE TYPED SET. It accepts only phpseclib3\File\X509 objects and
+ * does not allow duplicates.\
  * It also mimicks the functionality of regular PHP array.
  */
 final class TrustedCertificates implements Countable

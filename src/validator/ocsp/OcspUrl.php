@@ -43,7 +43,7 @@ final class OcspUrl
     }
 
     /**
-     * Returns the OCSP responder URI or null if it doesn't have one.
+     * Returns the OCSP responder URI from authorityInfoAccess or null if it doesn't have one.
      */
     public static function getOcspUri(X509 $certificate): ?Uri
     {

@@ -68,6 +68,7 @@ final class OcspRequestBuilder
 
         $ocspRequest->addRequest($this->certificateIdMapped);
 
+		// generate nonce and add nonce extension
         if ($this->ocspNonceEnabled) {
             $nonceBytes = call_user_func($this->secureRandom, 8);
             $ocspRequest->addNonceExtension($nonceBytes);

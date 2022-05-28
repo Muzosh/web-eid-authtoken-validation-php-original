@@ -41,6 +41,11 @@ class OcspResponseObject
 {
     private array $ocspResponse = array();
 
+    /**
+     * Creates ASN1 OCSPResponse object from DER/BER encoded bytestring.
+     *
+     * @throws UnexpectedValueException decoding failed
+     */
     public function __construct(string $encodedBER)
     {
         $decodedResponse = ASN1::decodeBER($encodedBER);
@@ -50,7 +55,7 @@ class OcspResponseObject
         }
 
         // decodes also BasicOCSPResponse from response octet string
-		// TODO: this function assumes the responseType was basic, what about the other situation?
+        // TODO: this function assumes the responseType was basic, what about the other situation?
         $this->ocspResponse = ASN1::asn1map(
             $decodedResponse[0],
             OcspOCSPResponse::MAP,
@@ -58,19 +63,6 @@ class OcspResponseObject
                 return ASN1::asn1map(ASN1::decodeBER($encoded)[0], OcspBasicOcspResponse::MAP);
             })
         );
-
-        /* // moved to SubjectCertificateNotRevokedValidator
-        if (isset($this->ocspResponse['responseBytes']['response']['certs'])) {
-            foreach ($this->ocspResponse['responseBytes']['response']['certs'] as &$cert) {
-                // We need to re-encode each responder certificate array as there exists some
-                // more loading in X509->loadX509 method, which is not executed when loading just basic array.
-                // For example without this the publicKey would not be in PEM format
-                // and X509->getPublicKey() will throw error.
-                $x509 = new X509();
-                $cert = $x509->loadX509(ASN1::encodeDER($cert, Certificate::MAP));
-                unset($x509);
-            }
-        } */
     }
 
     public function getStatus(): string

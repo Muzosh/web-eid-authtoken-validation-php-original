@@ -55,6 +55,9 @@ class AiaOcspService implements OcspService
     private Uri $url;
     private bool $supportsNonce;
 
+    /**
+     * @throws UserCertificateOCSPCheckFailedException
+     */
     public function __construct(AiaOcspServiceConfiguration $configuration, X509 $certificate)
     {
         $this->trustedCertificates = $configuration->getTrustedCertificates();
@@ -73,6 +76,11 @@ class AiaOcspService implements OcspService
     }
 
     /**
+     * Validates that the certificate is:\
+     * 1) valid on specified date\
+     * 2) has id-ce-extKeyUsage extension\
+     * 3) is signed by trusted certificate.
+     *
      * @throws CertificateNotYetValidException
      * @throws CertificateExpiredException
      * @throws InsufficientSetupException

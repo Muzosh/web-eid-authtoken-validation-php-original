@@ -64,7 +64,7 @@ final class CertificateData
     /**
      * Gets id-at-commonName from x509 certificate.
      *
-     * @throws UnexpectedValueException
+     * @throws UnexpectedValueException field identifier not found
      */
     public static function getSubjectCN(X509 $certificate): string
     {
@@ -74,7 +74,7 @@ final class CertificateData
     /**
      * Gets id-at-surname from x509 certificate.
      *
-     * @throws UnexpectedValueException
+     * @throws UnexpectedValueException field identifier not found
      */
     public static function getSubjectSurname(X509 $certificate): string
     {
@@ -84,7 +84,7 @@ final class CertificateData
     /**
      * Gets id-at-surname from x509 certificate.
      *
-     * @throws UnexpectedValueException
+     * @throws UnexpectedValueException field identifier not found
      */
     public static function getSubjectGivenName(X509 $certificate): string
     {
@@ -94,7 +94,7 @@ final class CertificateData
     /**
      * Gets id-at-serialNumber from x509 certificate.
      *
-     * @throws UnexpectedValueException
+     * @throws UnexpectedValueException field identifier not found
      */
     public static function getSubjectSerialNumber(X509 $certificate): string
     {
@@ -104,7 +104,7 @@ final class CertificateData
     /**
      * Gets id-at-countryName from x509 certificate.
      *
-     * @throws UnexpectedValueException
+     * @throws UnexpectedValueException field identifier not found
      */
     public static function getSubjectCountryCode(X509 $certificate): string
     {
@@ -119,7 +119,7 @@ final class CertificateData
      * @throws BadMethodCallException
      * @throws SodiumException
      * @throws TypeError
-     * @throws UnexpectedValueException
+     * @throws UnexpectedValueException   field identifier not found
      */
     private static function getSubjectField(X509 $certificate, string $fieldIdentifier): string
     {

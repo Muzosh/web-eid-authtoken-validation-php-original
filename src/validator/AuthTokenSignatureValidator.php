@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
+use ArithmeticError;
+use DivisionByZeroError;
 use GuzzleHttp\Psr7\Uri;
 use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
@@ -38,11 +40,13 @@ use phpseclib3\Crypt\Common\PublicKey;
 use phpseclib3\File\ASN1;
 use phpseclib3\File\ASN1\Maps\DssSigValue;
 use phpseclib3\Math\BigInteger;
+use RuntimeException;
 
 class AuthTokenSignatureValidator
 {
-    // Supported subset of JSON Web Signature algorithms as defined in RFC 7518, sections 3.3, 3.4, 3.5.
-    // See https://github.com/web-eid/libelectronic-id/blob/main/include/electronic-id/enums.hpp#L176.
+    /** Supported subset of JSON Web Signature algorithms as defined in RFC 7518, sections 3.3, 3.4, 3.5.
+     * See https://github.com/web-eid/libelectronic-id/blob/main/include/electronic-id/enums.hpp#L176.
+     */
     private const ALLOWED_SIGNATURE_ALGORITHMS = array(
         'ES256', 'ES384', 'ES512', // ECDSA
         'PS256', 'PS384', 'PS512', // RSASSA-PSS
@@ -56,6 +60,19 @@ class AuthTokenSignatureValidator
         $this->siteOrigin = $siteOrigin;
     }
 
+    /**
+     * Validates that the result signature from authtoken from card is valid.
+     *
+     * @param mixed $publicKey some public key from phpseclib3 library
+     *
+     * @throws AuthTokenParseException
+     * @throws InvalidArgumentException
+     * @throws ChallengeNullOrEmptyException
+     * @throws DivisionByZeroError
+     * @throws ArithmeticError
+     * @throws RuntimeException
+     * @throws AuthTokenSignatureValidationException
+     */
     public function validate(string $algorithm, string $base64Sig, $publicKey, string $currentChallengeNonce): void
     {
         $this->requireNotEmpty($algorithm, 'algorithm');
@@ -76,7 +93,7 @@ class AuthTokenSignatureValidator
         $derSig = base64_decode($base64Sig);
 
         // Note that in case of ECDSA, some eID cards output raw R||S, so we need to trascode it to DER
-        // Second condition actually checks, whether it is possible to map DER into DssSigValue (sequence with two integers)
+        // Second condition actually checks, whether it is possible to map DER into DssSigValue (=sequence with two integers)
         if ('ES' == substr($algorithm, 0, 2) && !ASN1::asn1map(ASN1::decodeBER($derSig)[0], DssSigValue::MAP)) {
             // Mapping was unsucessfull - there are two ways of transforming R||S into DER encoded ECC key:
             // 1) split DER encoded string in half, create corresponding array and encode it using the same mapping

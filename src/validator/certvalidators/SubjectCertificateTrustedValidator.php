@@ -29,16 +29,15 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateNotTrustedException;
-use muzosh\web_eid_authtoken_validation_php\util\MockableClock;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use phpseclib3\Exception\UnsupportedAlgorithmException;
 use phpseclib3\File\X509;
-use RangeException;
-use TypeError;
-use RuntimeException;
 use Psr\Log\InvalidArgumentException;
+use RangeException;
+use RuntimeException;
 use Throwable;
+use TypeError;
 
 final class SubjectCertificateTrustedValidator implements SubjectCertificateValidator
 {
@@ -56,26 +55,22 @@ final class SubjectCertificateTrustedValidator implements SubjectCertificateVali
         $this->trustedCertificates = $trustedCertificates;
     }
 
-	/**
-	 * Validates that the user certificate from the authentication token is signed by a trusted certificate authority.
-	 * @param X509 $subjectCertificate
-	 * @return void
-	 * @throws RangeException
-	 * @throws TypeError
-	 * @throws RuntimeException
-	 * @throws UnsupportedAlgorithmException
-	 * @throws CertificateNotTrustedException
-	 * @throws InvalidArgumentException
-	 * @throws Throwable
-	 */
+    /**
+     * Validates that the user certificate from the authentication token is signed by a trusted certificate authority.
+     *
+     * @throws RangeException
+     * @throws TypeError
+     * @throws RuntimeException
+     * @throws UnsupportedAlgorithmException
+     * @throws CertificateNotTrustedException
+     * @throws InvalidArgumentException
+     * @throws Throwable
+     */
     public function validate(X509 $subjectCertificate): void
     {
-        // Use the clock instance so that the date can be mocked in tests.
-        $now = MockableClock::getInstance()->now();
         $this->subjectCertificateIssuerCertificate = CertificateValidator::validateIsSignedByTrustedCertificate(
             $subjectCertificate,
-            $this->trustedCertificates,
-            // $now
+            $this->trustedCertificates
         );
         $this->logger->debug('Subject certificate is signed by a trusted CA');
     }

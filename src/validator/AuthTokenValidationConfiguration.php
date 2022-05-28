@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
+use GuzzleHttp\Psr7\Exception\MalformedUriException;
 use GuzzleHttp\Psr7\Uri;
 use InvalidArgumentException;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
@@ -121,8 +122,7 @@ final class AuthTokenValidationConfiguration
     /**
      * Checks that the configuration parameters are valid.
      *
-     * @throws NullPointerException     when required parameters are null
-     * @throws IllegalArgumentException when any parameter is invalid
+     * @throws InvalidArgumentException when any parameter is invalid
      */
     public function validate(): void
     {
@@ -139,12 +139,13 @@ final class AuthTokenValidationConfiguration
     }
 
     /**
-     * Validates that the given URI is an origin URL as defined in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Location/origin">MDN</a>,
+     * Validates that the given URI is an origin URL as defined in MDN,
      * in the form of <scheme> "://" <hostname> [ ":" <port> ].
      *
-     * @param uri URI with origin URL
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Location/origin MDN
      *
-     * @throws IllegalArgumentException when the URI is not in the form of origin URL
+     * @throws InvalidArgumentException when the URI is not in the form of origin URL
+     * @throws MalformedUriException
      */
     public static function validateIsOriginURL(Uri $uri): void
     {

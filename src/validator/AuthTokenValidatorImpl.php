@@ -27,11 +27,16 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
+use ArithmeticError;
+use DivisionByZeroError;
+use InvalidArgumentException as GlobalInvalidArgumentException;
 use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\authtoken\WebEidAuthToken;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenSignatureValidationException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateDecodingException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNullOrEmptyException;
 use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateExpiryValidator;
@@ -44,8 +49,14 @@ use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClient;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClientImpl;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspServiceProvider;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\AiaOcspServiceConfiguration;
+use phpseclib3\Exception\InconsistentSetupException;
+use phpseclib3\Exception\NoKeyLoadedException;
 use phpseclib3\File\X509;
+use Psr\Log\InvalidArgumentException;
+use RangeException;
+use RuntimeException;
 use Throwable;
+use TypeError;
 use UnexpectedValueException;
 
 /**
@@ -95,6 +106,10 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         $this->authTokenSignatureValidator = new AuthTokenSignatureValidator($configuration->getSiteOrigin());
     }
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws Throwable
+     */
     public function parse(string $authToken): WebEidAuthToken
     {
         $this->logger->info('Starting token parsing');
@@ -110,6 +125,10 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         }
     }
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws Throwable
+     */
     public function validate(WebEidAuthToken $authToken, string $currentChallengeNonce): X509
     {
         $this->logger->info('Starting token validation');
@@ -123,6 +142,9 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         }
     }
 
+    /**
+     * @throws AuthTokenParseException
+     */
     private function validateTokenLength(string $authToken): void
     {
         if (is_null($authToken) || strlen($authToken) < self::TOKEN_MIN_LENGTH) {
@@ -133,6 +155,9 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         }
     }
 
+    /**
+     * @throws AuthTokenParseException
+     */
     private function parseToken(string $authToken): WebEidAuthToken
     {
         try {
@@ -147,6 +172,20 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         }
     }
 
+    /**
+     * @throws AuthTokenParseException
+     * @throws RangeException
+     * @throws TypeError
+     * @throws RuntimeException
+     * @throws CertificateDecodingException
+     * @throws NoKeyLoadedException
+     * @throws InconsistentSetupException
+     * @throws GlobalInvalidArgumentException
+     * @throws ChallengeNullOrEmptyException
+     * @throws DivisionByZeroError
+     * @throws ArithmeticError
+     * @throws AuthTokenSignatureValidationException
+     */
     private function validateToken(WebEidAuthToken $token, string $currentChallengeNonce): X509
     {
         if (is_null($token->getFormat()) || 0 !== strpos($token->getFormat(), self::CURRENT_TOKEN_FORMAT_VERSION)) {
@@ -186,7 +225,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
      * they cannot be reused/cached in an instance variable in a multi-threaded environment. Hence, they are
      * re-created for each validation run for thread safety.
      *
-     * @return certificate trust validator batch
+     * @return SubjectCertificateValidatorBatch certificate trust validator batch
      */
     private function getCertTrustValidators(): SubjectCertificateValidatorBatch
     {

@@ -72,6 +72,8 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
     }
 
     /**
+     * Validates that subject certificate is not revoked.
+     *
      * @throws UserCertificateOCSPCheckFailedException
      */
     public function validate(X509 $subjectCertificate): void
@@ -160,16 +162,11 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         // We assume that the responder includes its certificate in the certs field of the response
         // that helps us to verify it. According to RFC 2560 this field is optional, but including it
         // is standard practice.
-        if (1 != count($basicResponse->getCerts())) {
-            throw new UserCertificateOCSPCheckFailedException('OCSP response must contain one responder certificate, received '.count($basicResponse->getCerts()).' certificates instead');
+        if (1 != count($basicResponse->getResponderCerts())) {
+            throw new UserCertificateOCSPCheckFailedException('OCSP response must contain one responder certificate, received '.count($basicResponse->getResponderCerts()).' certificates instead');
         }
 
-        // We need to re-encode each responder certificate array as there exists some
-        // more loading in X509->loadX509 method, which is not executed when loading just basic array.
-        // For example without this the publicKey would not be in PEM format
-        // and X509->getPublicKey() will throw error.
-        $responderCert = new X509();
-        $responderCert->loadX509(ASN1::encodeDER($basicResponse->getCerts()[0], Certificate::MAP));
+        $responderCert = $basicResponse->getResponderCerts()[0];
 
         OcspResponseValidator::validateResponseSignature($basicResponse, $responderCert);
 

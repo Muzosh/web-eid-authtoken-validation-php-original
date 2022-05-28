@@ -55,7 +55,7 @@ final class CertificateLoader
 	 * Loads certificate files from given path into array of phpseclib3\File\X509 objects
 	 * @param string $certPath directory path where to look for certificates
 	 * @param string ...$certificateNames multiple file names of certificates to load
-	 * @return array
+	 * @return array array of phpseclib3\file\X509 objects
 	 * @throws RangeException
 	 * @throws TypeError
 	 * @throws RuntimeException

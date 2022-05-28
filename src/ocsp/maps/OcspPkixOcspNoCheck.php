@@ -25,25 +25,15 @@
 
 declare(strict_types=1);
 
-namespace muzosh\web_eid_authtoken_validation_php\testutil;
+namespace muzosh\web_eid_authtoken_validation_php\ocsp\maps;
 
-use DateTime;
-use muzosh\web_eid_authtoken_validation_php\util\MockableClock;
+use phpseclib3\File\ASN1;
 
-final class Dates
+/**
+ * Currently not used. Might be used before calling X509::saveX509() in
+ * X509::registerExtension() to correctly map this extension out.
+ */
+abstract class OcspPkixOcspNoCheck
 {
-    public static function create(string $iso8601Date): DateTime
-    {
-        return new DateTime($iso8601Date);
-    }
-
-    public static function setMockedCertificateValidatorDate(DateTime $mockedDate): void
-    {
-        MockableClock::getInstance()->setMockedClock($mockedDate);
-    }
-
-    public static function resetMockedCertificateValidatorDate(): void
-    {
-        MockableClock::getInstance()->resetMockedClock();
-    }
+    public const MAP = array('type' => ASN1::TYPE_OCTET_STRING);
 }

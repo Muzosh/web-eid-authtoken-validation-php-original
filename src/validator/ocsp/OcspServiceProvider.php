@@ -51,7 +51,7 @@ class OcspServiceProvider
      * A static factory method that returns either the designated or AIA OCSP service instance depending on whether
      * the designated OCSP service is configured and supports the issuer of the certificate.
      *
-     * @param certificate subject certificate that is to be checked with OCSP
+     * @param X509 $certificate subject certificate that is to be checked with OCSP
      *
      * @throws AuthTokenException           when AIA URL is not found in certificate
      * @throws CertificateEncodingException when certificate is invalid

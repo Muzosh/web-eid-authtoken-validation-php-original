@@ -28,9 +28,13 @@ declare(strict_types=1);
 namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp\service;
 
 use GuzzleHttp\Psr7\Uri;
+use LengthException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\util\X509Array;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspResponseValidator;
+use phpseclib3\Exception\InsufficientSetupException;
 use phpseclib3\File\X509;
+use TypeError;
 
 class DesignatedOcspServiceConfiguration
 {
@@ -42,11 +46,9 @@ class DesignatedOcspServiceConfiguration
     /**
      * Configuration of a designated OCSP service.
      *
-     * @param ocspServiceAccessLocation the URL where the service is located
-     * @param responderCertificate the service's OCSP responder certificate
-     * @param supportedCertificateIssuers the certificate issuers supported by the service
-     * @param doesSupportNonce true if the service supports the OCSP protocol nonce extension
-     *
+     * @throws InsufficientSetupException
+     * @throws LengthException
+     * @throws TypeError
      * @throws OCSPCertificateException when an error occurs while extracting issuer names from certificates
      */
     public function __construct(Uri $ocspServiceAccessLocation, X509 $responderCertificate, X509Array $supportedCertificateIssuers, bool $doesSupportNonce)

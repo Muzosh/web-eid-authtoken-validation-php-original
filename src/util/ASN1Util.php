@@ -35,7 +35,7 @@ use TypeError;
 use UnexpectedValueException;
 
 /**
- * Utility class for handling ASN1 related operations
+ * Utility class for handling ASN1 related operations.
  */
 final class ASN1Util
 {
@@ -71,6 +71,7 @@ final class ASN1Util
             'id-pkix-ocsp' => '1.3.6.1.5.5.7.48.1',
             'secp384r1' => '1.3.132.0.34',
             'id-pkix-ocsp-archive-cutoff' => '1.3.6.1.5.5.7.48.1.6',
+            'id-pkix-ocsp-nocheck' => '1.3.6.1.5.5.7.48.1.5',
         ));
     }
 

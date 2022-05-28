@@ -48,6 +48,22 @@ use TypeError;
     https://gist.github.com/MightyPork/5ad28f208f046a24831c
     */
 
+/**
+ * This class represents a TYPED ARRAY. It accepts only specific class.
+ * It also mimicks the functionality of regular PHP array.
+ * For creating new typed array, inherit from this abstract class and implement these two functions:\
+ * public function __construct(<your_class> ...$<your_class>)\
+ * {\
+ *   $this->array = $<your_class>;\
+ * }.\
+ *\
+ * public function checkInstance($value): void\
+ * {\
+ *   if (!$value instanceof <your_class>) {\
+ *     throw new TypeError('Wrong instance ('.gettype($value).') - expected: '.<your_class>::class);\
+ *   }\
+ * }\.
+ */
 abstract class TypedArray implements Countable, ArrayAccess, IteratorAggregate
 {
     protected array $array;
@@ -75,7 +91,7 @@ abstract class TypedArray implements Countable, ArrayAccess, IteratorAggregate
         return isset($this->array[$offset]);
     }
 
-    public function offsetGet($offset): mixed
+    public function offsetGet($offset)
     {
         return $this->array[$offset];
     }
@@ -121,7 +137,7 @@ class X509Array extends TypedArray
     public function checkInstance($value): void
     {
         if (!$value instanceof X509) {
-            throw new TypeError('Can only insert '.X509::class);
+            throw new TypeError('Wrong instance ('.gettype($value).'), expected: '.X509::class);
         }
     }
 
@@ -149,7 +165,7 @@ final class SubjectCertificateValidatorArray extends TypedArray
     public function checkInstance($value): void
     {
         if (!$value instanceof SubjectCertificateValidator) {
-            throw new TypeError('Can only insert '.SubjectCertificateValidator::class);
+            throw new TypeError('Wrong instance ('.gettype($value).') - expected: '.SubjectCertificateValidator::class);
         }
     }
 }
@@ -187,7 +203,7 @@ final class UriUniqueArray extends TypedArray
     public function checkInstance($value): void
     {
         if (!$value instanceof Uri) {
-            throw new \TypeError('Can only insert '.Uri::class);
+            throw new \TypeError('Wrong instance ('.gettype($value).') - expected: '.Uri::class);
         }
     }
 

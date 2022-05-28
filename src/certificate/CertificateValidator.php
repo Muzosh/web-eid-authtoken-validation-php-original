@@ -98,7 +98,7 @@ final class CertificateValidator
      * @throws TypeError
      * @throws RuntimeException
      * @throws UnsupportedAlgorithmException
-     * @throws CertificateNotTrustedException
+     * @throws CertificateNotTrustedException certificate validation failed
      *
      * @return X509 trusted certificate which signed the untrusted certificate
      */
@@ -107,7 +107,7 @@ final class CertificateValidator
         TrustedCertificates $trustedCertificates
     ): X509 {
         foreach ($trustedCertificates->getCertificates() as $trustedCertificate) {
-            // loadCA function accepts PEM format, so we need to get it from $trustedCertificate
+            // loadCA function accepts PEM format, so we need to get it from $trustedCertificate->saveX509()
             $untrustedCertificate->loadCA(
                 $trustedCertificate->saveX509(
                     $trustedCertificate->getCurrentCert(),
@@ -117,7 +117,7 @@ final class CertificateValidator
         }
 
         // ? Do we want to disable fetching of isser certificates of loaded intermediate certs?
-        $untrustedCertificate->disableURLFetch();
+        // $untrustedCertificate->disableURLFetch();
 
         if ($untrustedCertificate->validateSignature()) {
             $chain = $untrustedCertificate->getChain();
