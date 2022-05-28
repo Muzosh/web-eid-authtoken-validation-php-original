@@ -4,14 +4,16 @@
 	"description": "Web eID authentication token validation library for PHP",
 	"keywords": [
 		"Muzosh",
-		"web_eid_authtoken_validation_php"
+		"web_eid_authtoken_validation_php",
+		"webeid",
+		"Web-eID"
 	],
 	"homepage": "https://github.com/Muzosh/web-eid-authtoken-validation-php",
 	"license": "MIT",
 	"authors": [
 		{
 			"name": "Petr Muzikant",
-			"email": "pmuzikant@email.cz",
+			"email": "petr.muzikant@vut.cz",
 			"homepage": "https://github.com/Muzosh",
 			"role": "Developer/MSc student"
 		}
@@ -30,8 +32,10 @@
 			"muzosh\\web_eid_authtoken_validation_php\\": "src"
 		},
 		"classmap": [
-			"src/util/TypedArrayUtil.php",
-			"src/util/TrustedCertificates.php"
+			"src/util/TypedArrayUtil.php"
+		],
+		"files": [
+			"config/Config.php"
 		]
 	},
 	"autoload-dev": {
@@ -41,11 +45,6 @@
 	},
 	"scripts": {
 		"test": "phpunit"
-	},
-	"extra": {
-		"branch-alias": {
-			"dev-master": "1.0-dev"
-		}
 	},
 	"config": {
 		"sort-packages": true

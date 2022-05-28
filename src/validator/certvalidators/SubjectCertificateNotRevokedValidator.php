@@ -1,11 +1,36 @@
 <?php
 
+/* The MIT License (MIT)
+*
+* Copyright (c) 2022 Petr Muzikant <pmuzikant@email.cz>
+*
+* > Permission is hereby granted, free of charge, to any person obtaining a copy
+* > of this software and associated documentation files (the "Software"), to deal
+* > in the Software without restriction, including without limitation the rights
+* > to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* > copies of the Software, and to permit persons to whom the Software is
+* > furnished to do so, subject to the following conditions:
+* >
+* > The above copyright notice and this permission notice shall be included in
+* > all copies or substantial portions of the Software.
+* >
+* > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* > IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* > FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* > AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* > THE SOFTWARE.
+*/
+
 declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
 use Monolog\Logger;
+use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateRevokedException;
 use muzosh\web_eid_authtoken_validation_php\ocsp\BasicResponseObject;
 use muzosh\web_eid_authtoken_validation_php\ocsp\maps\OcspOCSPResponseStatus;
 use muzosh\web_eid_authtoken_validation_php\ocsp\OcspRequestObject;
@@ -16,10 +41,16 @@ use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspRequestBuilder;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspResponseValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspServiceProvider;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\OcspService;
+use phpseclib3\Exception\InconsistentSetupException;
+use phpseclib3\Exception\NoKeyLoadedException;
 use phpseclib3\File\ASN1;
 use phpseclib3\File\ASN1\Maps\Certificate;
 use phpseclib3\File\X509;
+use Psr\Log\InvalidArgumentException;
+use RangeException;
+use RuntimeException;
 use Throwable;
+use TypeError;
 
 final class SubjectCertificateNotRevokedValidator implements SubjectCertificateValidator
 {
@@ -40,17 +71,25 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         $this->ocspServiceProvider = $ocspServiceProvider;
     }
 
+    /**
+     * Validates that subject certificate is not revoked.
+     *
+     * @throws UserCertificateOCSPCheckFailedException
+     */
     public function validate(X509 $subjectCertificate): void
     {
         try {
+            // Get service used for OCSP check (pre-defined provider or AIA)
             $ocspService = $this->ocspServiceProvider->getService($subjectCertificate);
 
             if (!$ocspService->doesSupportNonce()) {
                 $this->logger->debug('Disabling OCSP nonce extension');
             }
 
-            $certificateId = OcspUtil::getCertificateId($subjectCertificate, $this->trustValidator->getSubjectCertificateIssuerCertificate());
+            // build CertificateID
+            $certificateId = OcspUtil::buildCertificateId($subjectCertificate, $this->trustValidator->getSubjectCertificateIssuerCertificate());
 
+            // build OcspRequestObject
             $request = (new OcspRequestBuilder())
                 ->withCertificateId($certificateId)
                 ->enableOcspNonce($ocspService->doesSupportNonce())
@@ -58,13 +97,21 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         ;
 
             $this->logger->debug('Sending OCSP request');
+            // sent HTTP request with OCSP request
             $response = $this->ocspClient->request($ocspService->getAccessLocation(), $request->getEncodedDER());
+
+            // if response is not 'successful'
             if ($response->getStatus() != OcspOCSPResponseStatus::MAP['mapping'][0]) {
                 throw new UserCertificateOCSPCheckFailedException('Response status: '.$response->getStatus());
             }
 
+            // extract BasicOCSPResponse
             $basicResponse = $response->getBasicResponse();
+
+            // verify it
             $this->verifyOcspResponse($basicResponse, $ocspService, $certificateId);
+
+            // check nonce
             if ($ocspService->doesSupportNonce()) {
                 $this->checkNonce($request, $basicResponse);
             }
@@ -73,6 +120,18 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         }
     }
 
+    /**
+     * @throws UserCertificateOCSPCheckFailedException
+     * @throws RuntimeException
+     * @throws RangeException
+     * @throws TypeError
+     * @throws NoKeyLoadedException
+     * @throws InconsistentSetupException
+     * @throws OCSPCertificateException
+     * @throws UserCertificateRevokedException
+     * @throws InvalidArgumentException
+     * @throws Throwable
+     */
     private function verifyOcspResponse(BasicResponseObject $basicResponse, OcspService $ocspService, array $requestCertificateId): void
     {
         // The verification algorithm follows RFC 2560, https://www.ietf.org/rfc/rfc2560.txt.
@@ -90,6 +149,10 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         }
 
         $certStatusResponse = $basicResponse->getResponses()[0];
+
+        // translate algorithm name to OID for correct equality check
+        $certStatusResponse['certID']['hashAlgorithm']['algorithm'] = ASN1::getOID($certStatusResponse['certID']['hashAlgorithm']['algorithm']);
+
         if ($requestCertificateId != $certStatusResponse['certID']) {
             throw new UserCertificateOCSPCheckFailedException('OCSP responded with certificate ID that differs from the requested ID');
         }
@@ -99,16 +162,11 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         // We assume that the responder includes its certificate in the certs field of the response
         // that helps us to verify it. According to RFC 2560 this field is optional, but including it
         // is standard practice.
-        if (1 != count($basicResponse->getCerts())) {
-            throw new UserCertificateOCSPCheckFailedException('OCSP response must contain one responder certificate, received '.count($basicResponse->getCerts()).' certificates instead');
+        if (1 != count($basicResponse->getResponderCerts())) {
+            throw new UserCertificateOCSPCheckFailedException('OCSP response must contain one responder certificate, received '.count($basicResponse->getResponderCerts()).' certificates instead');
         }
 
-        // We need to re-encode each responder certificate array as there exists some
-        // more loading in X509->loadX509 method, which is not executed when loading just basic array.
-        // For example without this the publicKey would not be in PEM format
-        // and X509->getPublicKey() will throw error.
-        $responderCert = new X509();
-        $responderCert->loadX509(ASN1::encodeDER($basicResponse->getCerts()[0], Certificate::MAP));
+        $responderCert = $basicResponse->getResponderCerts()[0];
 
         OcspResponseValidator::validateResponseSignature($basicResponse, $responderCert);
 

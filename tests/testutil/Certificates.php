@@ -1,5 +1,28 @@
 <?php
 
+/* The MIT License (MIT)
+*
+* Copyright (c) 2022 Petr Muzikant <pmuzikant@email.cz>
+*
+* > Permission is hereby granted, free of charge, to any person obtaining a copy
+* > of this software and associated documentation files (the "Software"), to deal
+* > in the Software without restriction, including without limitation the rights
+* > to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* > copies of the Software, and to permit persons to whom the Software is
+* > furnished to do so, subject to the following conditions:
+* >
+* > The above copyright notice and this permission notice shall be included in
+* > all copies or substantial portions of the Software.
+* >
+* > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* > IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* > FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* > AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* > THE SOFTWARE.
+*/
+
 declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\testutil;
@@ -22,7 +45,7 @@ class Certificates
 
     public static function loadCertificates(): void
     {
-        $certificates = CertificateLoader::loadCertificatesFromPath(__DIR__.'/../_resources', 'TEST_of_ESTEID-SK_2015.cer', 'TEST_of_ESTEID2018.cer', 'TEST_of_SK_OCSP_RESPONDER_2020.cer','TEST_of_EE-GovCA2018.crt');
+        $certificates = CertificateLoader::loadCertificatesFromPath(__DIR__.'/../_resources', 'TEST_of_ESTEID-SK_2015.cer', 'TEST_of_ESTEID2018.cer', 'TEST_of_SK_OCSP_RESPONDER_2020.cer', 'TEST_of_EE-GovCA2018.crt');
         self::$testEsteid2015CA = $certificates[0];
         self::$testEsteid2018CA = $certificates[1];
         self::$testSkOcspResponder2020 = $certificates[2];

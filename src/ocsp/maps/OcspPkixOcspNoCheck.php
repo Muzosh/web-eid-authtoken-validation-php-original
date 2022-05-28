@@ -29,18 +29,11 @@ namespace muzosh\web_eid_authtoken_validation_php\ocsp\maps;
 
 use phpseclib3\File\ASN1;
 
-abstract class OcspOCSPResponseStatus
+/**
+ * Currently not used. Might be used before calling X509::saveX509() in
+ * X509::registerExtension() to correctly map this extension out.
+ */
+abstract class OcspPkixOcspNoCheck
 {
-    public const MAP = array(
-        'type' => ASN1::TYPE_ENUMERATED,
-        'mapping' => array(
-            0 => 'successful',
-            1 => 'malformedRequest',
-            2 => 'internalError',
-            3 => 'tryLater',
-            // 4 is not used
-            5 => 'sigRequired',
-            6 => 'unauthorized',
-        ),
-    );
+    public const MAP = array('type' => ASN1::TYPE_OCTET_STRING);
 }

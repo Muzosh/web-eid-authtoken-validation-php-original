@@ -1,16 +1,43 @@
 <?php
 
+/* The MIT License (MIT)
+*
+* Copyright (c) 2022 Petr Muzikant <pmuzikant@email.cz>
+*
+* > Permission is hereby granted, free of charge, to any person obtaining a copy
+* > of this software and associated documentation files (the "Software"), to deal
+* > in the Software without restriction, including without limitation the rights
+* > to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* > copies of the Software, and to permit persons to whom the Software is
+* > furnished to do so, subject to the following conditions:
+* >
+* > The above copyright notice and this permission notice shall be included in
+* > all copies or substantial portions of the Software.
+* >
+* > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* > IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* > FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* > AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* > THE SOFTWARE.
+*/
+
 declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator;
 
+use ArithmeticError;
+use DivisionByZeroError;
+use InvalidArgumentException as GlobalInvalidArgumentException;
 use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\authtoken\WebEidAuthToken;
 use muzosh\web_eid_authtoken_validation_php\certificate\CertificateValidator;
 use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenParseException;
+use muzosh\web_eid_authtoken_validation_php\exceptions\AuthTokenSignatureValidationException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\CertificateDecodingException;
-use muzosh\web_eid_authtoken_validation_php\util\CertStore;
-use muzosh\web_eid_authtoken_validation_php\util\TrustedAnchors;
+use muzosh\web_eid_authtoken_validation_php\exceptions\ChallengeNullOrEmptyException;
+use muzosh\web_eid_authtoken_validation_php\util\TrustedCertificates;
 use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateExpiryValidator;
 use muzosh\web_eid_authtoken_validation_php\validator\certvalidators\SubjectCertificateNotRevokedValidator;
@@ -22,8 +49,14 @@ use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClient;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspClientImpl;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\OcspServiceProvider;
 use muzosh\web_eid_authtoken_validation_php\validator\ocsp\service\AiaOcspServiceConfiguration;
+use phpseclib3\Exception\InconsistentSetupException;
+use phpseclib3\Exception\NoKeyLoadedException;
 use phpseclib3\File\X509;
+use Psr\Log\InvalidArgumentException;
+use RangeException;
+use RuntimeException;
 use Throwable;
+use TypeError;
 use UnexpectedValueException;
 
 /**
@@ -37,10 +70,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
     private Logger $logger;
     private AuthTokenValidationConfiguration $configuration;
     private SubjectCertificateValidatorBatch $subjectCertificateValidators;
-    private TrustedAnchors $trustedCACertificateAnchors;
-
-    // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-    // private CertStore $trustedCACertificateCertStore;
+    private TrustedCertificates $trustedCertificates;
 
     private OcspClient $ocspClient;
     private OcspServiceProvider $ocspServiceProvider;
@@ -54,13 +84,10 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         $this->configuration = clone $configuration;
 
         // Create and cache trusted CA certificate JCA objects for SubjectCertificateTrustedValidator and AiaOcspService.
-        $this->trustedCACertificateAnchors = CertificateValidator::buildTrustAnchorsFromCertificates($configuration->getTrustedCACertificates());
-
-        // CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-        // $this->trustedCACertificateCertStore = CertificateValidator::buildCertStoreFromCertificates($configuration->getTrustedCACertificates());
+        $this->trustedCertificates = CertificateValidator::buildTrustedCertificates($configuration->getTrustedCertificates());
 
         $this->subjectCertificateValidators = new SubjectCertificateValidatorBatch(
-            new SubjectCertificateExpiryValidator($this->trustedCACertificateAnchors),
+            new SubjectCertificateExpiryValidator($this->trustedCertificates),
             new SubjectCertificatePurposeValidator(),
             new SubjectCertificatePolicyValidator($configuration->getDisallowedSubjectCertificatePolicyIds())
         );
@@ -71,9 +98,7 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
                 $configuration->getDesignatedOcspServiceConfiguration(),
                 new AiaOcspServiceConfiguration(
                     $configuration->getNonceDisabledOcspUrls(),
-                    $this->trustedCACertificateAnchors,
-					// CertStore + TrustedAnchors in Java vs TrustedCertificates in C#
-                    //$this->trustedCACertificateCertStore
+                    $this->trustedCertificates
                 )
             );
         }
@@ -81,6 +106,10 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         $this->authTokenSignatureValidator = new AuthTokenSignatureValidator($configuration->getSiteOrigin());
     }
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws Throwable
+     */
     public function parse(string $authToken): WebEidAuthToken
     {
         $this->logger->info('Starting token parsing');
@@ -96,6 +125,10 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         }
     }
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws Throwable
+     */
     public function validate(WebEidAuthToken $authToken, string $currentChallengeNonce): X509
     {
         $this->logger->info('Starting token validation');
@@ -109,6 +142,9 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         }
     }
 
+    /**
+     * @throws AuthTokenParseException
+     */
     private function validateTokenLength(string $authToken): void
     {
         if (is_null($authToken) || strlen($authToken) < self::TOKEN_MIN_LENGTH) {
@@ -119,6 +155,9 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         }
     }
 
+    /**
+     * @throws AuthTokenParseException
+     */
     private function parseToken(string $authToken): WebEidAuthToken
     {
         try {
@@ -133,6 +172,20 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         }
     }
 
+    /**
+     * @throws AuthTokenParseException
+     * @throws RangeException
+     * @throws TypeError
+     * @throws RuntimeException
+     * @throws CertificateDecodingException
+     * @throws NoKeyLoadedException
+     * @throws InconsistentSetupException
+     * @throws GlobalInvalidArgumentException
+     * @throws ChallengeNullOrEmptyException
+     * @throws DivisionByZeroError
+     * @throws ArithmeticError
+     * @throws AuthTokenSignatureValidationException
+     */
     private function validateToken(WebEidAuthToken $token, string $currentChallengeNonce): X509
     {
         if (is_null($token->getFormat()) || 0 !== strpos($token->getFormat(), self::CURRENT_TOKEN_FORMAT_VERSION)) {
@@ -172,14 +225,13 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
      * they cannot be reused/cached in an instance variable in a multi-threaded environment. Hence, they are
      * re-created for each validation run for thread safety.
      *
-     * @return certificate trust validator batch
+     * @return SubjectCertificateValidatorBatch certificate trust validator batch
      */
     private function getCertTrustValidators(): SubjectCertificateValidatorBatch
     {
         $certTrustedValidator =
             new SubjectCertificateTrustedValidator(
-                $this->trustedCACertificateAnchors,
-                // $this->trustedCACertificateCertStore
+                $this->trustedCertificates,
             );
 
         $validatorBatch = new SubjectCertificateValidatorBatch(

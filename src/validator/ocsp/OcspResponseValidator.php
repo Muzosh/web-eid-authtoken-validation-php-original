@@ -1,5 +1,28 @@
 <?php
 
+/* The MIT License (MIT)
+*
+* Copyright (c) 2022 Petr Muzikant <pmuzikant@email.cz>
+*
+* > Permission is hereby granted, free of charge, to any person obtaining a copy
+* > of this software and associated documentation files (the "Software"), to deal
+* > in the Software without restriction, including without limitation the rights
+* > to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* > copies of the Software, and to permit persons to whom the Software is
+* > furnished to do so, subject to the following conditions:
+* >
+* > The above copyright notice and this permission notice shall be included in
+* > all copies or substantial portions of the Software.
+* >
+* > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* > IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* > FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* > AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* > THE SOFTWARE.
+*/
+
 declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp;
@@ -7,12 +30,18 @@ namespace muzosh\web_eid_authtoken_validation_php\validator\ocsp;
 use BadFunctionCallException;
 use DateInterval;
 use DateTime;
+use LengthException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\OCSPCertificateException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateOCSPCheckFailedException;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateRevokedException;
 use muzosh\web_eid_authtoken_validation_php\ocsp\BasicResponseObject;
 use muzosh\web_eid_authtoken_validation_php\util\DateAndTime;
+use phpseclib3\Exception\InconsistentSetupException;
+use phpseclib3\Exception\InsufficientSetupException;
+use phpseclib3\Exception\NoKeyLoadedException;
 use phpseclib3\File\X509;
+use RuntimeException;
+use TypeError;
 
 final class OcspResponseValidator
 {
@@ -23,7 +52,7 @@ final class OcspResponseValidator
      */
     private const OCSP_SIGNING = 'id-kp-OCSPSigning';
 
-    // 15 mins = 900 000 ms
+    // 15 mins = 900s
     private const ALLOWED_TIME_SKEW_SECONDS = 900;
 
     private function __construct()
@@ -31,6 +60,12 @@ final class OcspResponseValidator
         throw new BadFunctionCallException('Utility class');
     }
 
+    /**
+     * @throws InsufficientSetupException
+     * @throws LengthException
+     * @throws TypeError
+     * @throws OCSPCertificateException
+     */
     public static function validateHasSigningExtension(X509 $certificate): void
     {
         if (!$certificate->getExtension('id-ce-extKeyUsage') || !in_array(self::OCSP_SIGNING, $certificate->getExtension('id-ce-extKeyUsage'))) {
@@ -39,19 +74,30 @@ final class OcspResponseValidator
         }
     }
 
+    /**
+     * @throws NoKeyLoadedException
+     * @throws InconsistentSetupException
+     * @throws OCSPCertificateException
+     * @throws RuntimeException
+     * @throws UserCertificateOCSPCheckFailedException
+     */
     public static function validateResponseSignature(BasicResponseObject $basicResponse, X509 $responderCert): void
     {
+        // get public key from responder certificate in order to verify signature on response
         $publicKey = $responderCert->getPublicKey()->withHash($basicResponse->getSignatureAlgorithm());
 
+        // verify response data
         $encodedTbsResponseData = $basicResponse->getEncodedResponseData();
         $signature = $basicResponse->getSignature();
-        $result = $publicKey->verify($encodedTbsResponseData, $signature);
 
-        if (!$result) {
+        if (!$publicKey->verify($encodedTbsResponseData, $signature)) {
             throw new UserCertificateOCSPCheckFailedException('OCSP response signature is invalid');
         }
     }
 
+    /**
+     * @throws UserCertificateOCSPCheckFailedException
+     */
     public static function validateCertificateStatusUpdateTime(array $certStatusResponse, DateTime $producedAt): void
     {
         // From RFC 2560, https://www.ietf.org/rfc/rfc2560.txt:
@@ -79,6 +125,9 @@ final class OcspResponseValidator
         }
     }
 
+    /**
+     * @throws UserCertificateRevokedException
+     */
     public static function validateSubjectCertificateStatus(array $certStatusResponse): void
     {
         if (isset($certStatusResponse['certStatus']['good'])) {
