@@ -527,6 +527,7 @@ If you discover any security related issues, please email pmuzikant@email.cz ins
 # Credits
 
 - [Petr Muzikant][link-author]
+- [Web-eID contributors](https://github.com/orgs/web-eid/people)
 - [All Contributors][link-contributors]
 
 # License
