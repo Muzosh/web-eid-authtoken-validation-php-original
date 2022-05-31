@@ -35,7 +35,7 @@ For implementing this library with self-built/personalised/custom JavaCard, chec
 	- [Custom JavaCards](#custom-javacards)
 - [Table of contents](#table-of-contents)
 - [Quickstart](#quickstart)
-	- [1. Initialize library](#1-initialize-library)
+	- [1. Initialize library (INSTALLATION)](#1-initialize-library-installation)
 		- [Add the library to your project](#add-the-library-to-your-project)
 		- [Prepare OIDs](#prepare-oids)
 		- [Configure library](#configure-library)
@@ -74,7 +74,7 @@ In the following example we are using the [Nextcloud Application](https://docs.n
 
 See the full example [here](https://github.com/Muzosh/nextcloud_twofactor_webeid).
 
-## 1. Initialize library
+## 1. Initialize library (INSTALLATION)
 
 ### Add the library to your project
 
