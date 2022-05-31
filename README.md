@@ -21,11 +21,11 @@
 
 ## Nextcloud App implementation
 
-Example implementation and also usable two-factor authentication Nextcloud App (module) can be found in [web-eid-javacard-applet](https://github.com/Muzosh/web-eid-javacard-applet).
+Example implementation and also usable two-factor authentication Nextcloud App (module) can be found in [twofactor_nextcloud](https://github.com/Muzosh/twofactor_webeid).
 
 ## Custom JavaCards
 
-For implementing this library with self-built/personalised/custom JavaCard, check out [twofactor_nextcloud](https://github.com/Muzosh/twofactor_webeid)
+For implementing this library with self-built/personalised/custom JavaCard, check out [web-eid-javacard-applet](https://github.com/Muzosh/web-eid-javacard-applet).
 
 # Table of contents
 
