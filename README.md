@@ -23,9 +23,9 @@
 
 Example implementation and also usable two-factor authentication Nextcloud App (module) can be found in [twofactor_nextcloud](https://github.com/Muzosh/twofactor_webeid).
 
-## Custom JavaCards
+## Don't have official state-issued card supported by Web-eID? Create your own!
 
-For implementing this library with self-built/personalised/custom JavaCard, check out [web-eid-javacard-applet](https://github.com/Muzosh/web-eid-javacard-applet). You will also need a tweaked Web-eID native application, details are in [libelectronic-id-with-custom-java-card](https://github.com/Muzosh/libelectronic-id-with-custom-java-card).
+For implementing this library with self-built/personalised/custom JavaCard, check out [InfinitEID](https://github.com/Muzosh/InfinitEID). You will also need a tweaked Web-eID native application, details are in [libelectronic-id-with-InfinitEID](https://github.com/Muzosh/libelectronic-id-with-InfinitEID).
 
 # Table of contents
 
