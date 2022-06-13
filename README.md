@@ -21,7 +21,7 @@
 
 ## Example - Nextcloud App implementation
 
-Example implementation and also usable two-factor authentication Nextcloud App (module) can be found in [twofactor_nextcloud](https://github.com/Muzosh/twofactor_webeid).
+Example implementation and also usable two-factor authentication Nextcloud App (module) can be found in [nextcloud_twofactor_nextcloud](https://github.com/Muzosh/nextcloud_twofactor_webeid).
 
 ## Custom card solution
 
