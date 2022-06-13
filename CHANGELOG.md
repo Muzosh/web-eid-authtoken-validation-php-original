@@ -8,7 +8,7 @@ Updates should follow the [Keep a CHANGELOG](https://keepachangelog.com/) princi
 
 ### Added
 - All functionality from [for web-eid-authtoken-validation-java](https://github.com/web-eid/web-eid-authtoken-validation-java)
-- possible authentication with [custom smartcards](https://github.com/Muzosh/web-eid-javacard-applet)
+- possible authentication with [custom smartcards](https://github.com/Muzosh/InfinitEID)
 
 
 ## NEXT - YYYY-MM-DD

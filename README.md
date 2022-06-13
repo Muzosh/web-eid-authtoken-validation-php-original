@@ -19,11 +19,11 @@
     - works with test EstEID from SK ID Solutions without problems
     - has the same functionality as other (Java and .NET) validation libraries
 
-## Nextcloud App implementation
+## Example - Nextcloud App implementation
 
 Example implementation and also usable two-factor authentication Nextcloud App (module) can be found in [twofactor_nextcloud](https://github.com/Muzosh/twofactor_webeid).
 
-## Don't have official state-issued card supported by Web-eID? Create your own!
+## Don't have official state-issued card supported by Web-eID? Create your own
 
 For implementing this library with self-built/personalised/custom JavaCard, check out [InfinitEID](https://github.com/Muzosh/InfinitEID). You will also need a tweaked Web-eID native application, details are in [libelectronic-id-with-InfinitEID](https://github.com/Muzosh/libelectronic-id-with-InfinitEID).
 
@@ -31,8 +31,8 @@ For implementing this library with self-built/personalised/custom JavaCard, chec
 
 - [web-eid-authtoken-validation-php](#web-eid-authtoken-validation-php)
 	- [TL;DR](#tldr)
-	- [Nextcloud App implementation](#nextcloud-app-implementation)
-	- [Custom JavaCards](#custom-javacards)
+	- [Example - Nextcloud App implementation](#example---nextcloud-app-implementation)
+	- [Don't have official state-issued card supported by Web-eID? Create your own](#dont-have-official-state-issued-card-supported-by-web-eid-create-your-own)
 - [Table of contents](#table-of-contents)
 - [Quickstart](#quickstart)
 	- [1. Initialize library (INSTALLATION)](#1-initialize-library-installation)
