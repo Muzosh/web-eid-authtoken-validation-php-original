@@ -23,8 +23,9 @@
 
 Example implementation and also usable two-factor authentication Nextcloud App (module) can be found in [twofactor_nextcloud](https://github.com/Muzosh/twofactor_webeid).
 
-## Don't have official state-issued card supported by Web-eID? Create your own
+## Custom card solution
 
+> Don't have official state-issued card supported by Web-eID? Create your own!
 For implementing this library with self-built/personalised/custom JavaCard, check out [InfinitEID](https://github.com/Muzosh/InfinitEID). You will also need a tweaked Web-eID native application, details are in [libelectronic-id-with-InfinitEID](https://github.com/Muzosh/libelectronic-id-with-InfinitEID).
 
 # Table of contents
@@ -32,7 +33,7 @@ For implementing this library with self-built/personalised/custom JavaCard, chec
 - [web-eid-authtoken-validation-php](#web-eid-authtoken-validation-php)
 	- [TL;DR](#tldr)
 	- [Example - Nextcloud App implementation](#example---nextcloud-app-implementation)
-	- [Don't have official state-issued card supported by Web-eID? Create your own](#dont-have-official-state-issued-card-supported-by-web-eid-create-your-own)
+	- [Custom card solution](#custom-card-solution)
 - [Table of contents](#table-of-contents)
 - [Quickstart](#quickstart)
 	- [1. Initialize library (INSTALLATION)](#1-initialize-library-installation)
@@ -533,7 +534,6 @@ If you discover any security related issues, please email pmuzikant@email.cz ins
 # License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
-
 
 [ico-version]: <https://img.shields.io/packagist/v/Muzosh/web_eid_authtoken_validation_php.svg?style=flat-square>
 [ico-license]: <https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square>
