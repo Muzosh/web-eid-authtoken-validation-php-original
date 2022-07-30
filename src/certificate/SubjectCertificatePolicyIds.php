@@ -25,7 +25,7 @@
 
 declare(strict_types=1);
 
-namespace muzosh\web_eid_authtoken_validation_php\util;
+namespace muzosh\web_eid_authtoken_validation_php\certificate;
 
 use BadFunctionCallException;
 /**
@@ -49,6 +49,6 @@ final class SubjectCertificatePolicyIds
      */
     public function __construct()
     {
-        throw new BadFunctionCallException('Utility class');
+        throw new BadFunctionCallException('Constants class');
     }
 }

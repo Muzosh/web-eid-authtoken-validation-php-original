@@ -219,6 +219,7 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
     {
         $this->mockDate('2018-10-17');
 
+		$this->expectExceptionMessage('User certificate is not yet valid');
         $this->expectException(CertificateNotYetValidException::class);
         $this->validator->validate($this->validAuthToken, self::VALID_CHALLENGE_NONCE);
     }
@@ -228,6 +229,7 @@ class AuthTokenCertificateTest extends AbstractTestWithValidator
         $this->mockDate('2018-08-17');
 
         $this->expectException(CertificateNotYetValidException::class);
+		$this->expectExceptionMessage('Trusted CA certificate is not yet valid');
         $this->validator->validate($this->validAuthToken, self::VALID_CHALLENGE_NONCE);
     }
 

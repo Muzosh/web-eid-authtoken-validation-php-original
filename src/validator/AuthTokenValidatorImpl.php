@@ -206,9 +206,8 @@ final class AuthTokenValidatorImpl implements AuthTokenValidator
         $this->subjectCertificateValidators->executeFor($subjectCertificate);
         $this->getCertTrustValidators()->executeFor($subjectCertificate);
 
-        // It is guaranteed that if the signature verification succeeds, then the origin, challenge
-        // and, if part of the signature, origin certificate have been implicitly and correctly verified
-        // without the need to implement any additional checks.
+        // It is guaranteed that if the signature verification succeeds, then the origin and challenge
+        // have been implicitly and correctly verified without the need to implement any additional checks.
         $this->authTokenSignatureValidator->validate(
             $token->getAlgorithm(),
             $token->getSignature(),

@@ -162,8 +162,8 @@ final class SubjectCertificateNotRevokedValidator implements SubjectCertificateV
         // We assume that the responder includes its certificate in the certs field of the response
         // that helps us to verify it. According to RFC 2560 this field is optional, but including it
         // is standard practice.
-        if (1 != count($basicResponse->getResponderCerts())) {
-            throw new UserCertificateOCSPCheckFailedException('OCSP response must contain one responder certificate, received '.count($basicResponse->getResponderCerts()).' certificates instead');
+        if (1 > count($basicResponse->getResponderCerts())) {
+            throw new UserCertificateOCSPCheckFailedException('OCSP response must contain the responder certificate, but non was provided');
         }
 
         $responderCert = $basicResponse->getResponderCerts()[0];

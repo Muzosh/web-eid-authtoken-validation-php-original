@@ -50,6 +50,9 @@ class ChallengeNonceGeneratorTest extends TestCase
 
         $nonce1 = $challengeNonceGenerator->generateAndStoreNonce();
         $nonce2 = $challengeNonceGenerator->generateAndStoreNonce();
+		$nonce2fromStore = $this->challengeNonceStore->getAndRemove();
+
+		$this->assertEquals($nonce2, $nonce2fromStore);
 
         // Base64-encoded 32 bytes = 44 strlen
         $this->assertTrue(44 == strlen($nonce1->getBase64EncodedNonce()));

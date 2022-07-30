@@ -27,16 +27,20 @@ declare(strict_types=1);
 
 namespace muzosh\web_eid_authtoken_validation_php\validator\certvalidators;
 
+use Monolog\Logger;
 use muzosh\web_eid_authtoken_validation_php\exceptions\UserCertificateDisallowedPolicyException;
+use muzosh\web_eid_authtoken_validation_php\util\WebEidLogger;
 use phpseclib3\File\X509;
 
 final class SubjectCertificatePolicyValidator implements SubjectCertificateValidator
 {
     private array $disallowedSubjectCertificatePolicyIds;
+	private Logger $logger;
 
     public function __construct(array $disallowedSubjectCertificatePolicyIds)
     {
         $this->disallowedSubjectCertificatePolicyIds = $disallowedSubjectCertificatePolicyIds;
+		$this->logger = WebEidLogger::getLogger(self::class);
     }
 
     /**
@@ -54,5 +58,7 @@ final class SubjectCertificatePolicyValidator implements SubjectCertificateValid
                 throw new UserCertificateDisallowedPolicyException();
             }
         }
+
+		$this->logger->debug("User certificate does not contain disallowed policies.");
     }
 }

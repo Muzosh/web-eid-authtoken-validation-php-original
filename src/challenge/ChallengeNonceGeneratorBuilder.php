@@ -57,7 +57,7 @@ class ChallengeNonceGeneratorBuilder
      * Override default nonce time-to-live duration.
      * When the time-to-live passes, the nonce is considered to be expired.
      *
-     * @param int $seconds time-to-live duration in seconds
+     * @param int $seconds challenge nonce time-to-live duration in seconds
      *
      * @return ChallengeNonceGeneratorBuilder builder instance
      */
