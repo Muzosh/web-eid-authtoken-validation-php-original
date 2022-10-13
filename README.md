@@ -6,7 +6,7 @@
 
 > *web-eid-authtoken-validation-php* is a PHP library for issuing challenge nonces and validating Web eID authentication tokens during secure authentication with electronic ID (supported state-issued or custom built) smart cards in web applications.
 
-> This is a sibling repository [for web-eid-authtoken-validation-java](https://github.com/web-eid/web-eid-authtoken-validation-java). More information about the Web eID project is available on the project [website](https://web-eid.eu/).
+> This is a sibling repository for [web-eid-authtoken-validation-java](https://github.com/web-eid/web-eid-authtoken-validation-java). More information about the Web eID project is available on the project [website](https://web-eid.eu/).
 
 ## TL;DR
 
@@ -18,6 +18,11 @@
     - all unit-tests (with mocked certificates and tokens) ported from java library are functional
     - works with test EstEID from SK ID Solutions without problems
     - has the same functionality as other (Java and .NET) validation libraries
+
+## UPDATE FALL 2022
+- this library was already ported and updated in official Web-eID repository [here](https://github.com/web-eid/web-eid-authtoken-validation-php)
+- if you wish to try InfinitEID, use this library
+- if you wish to develop your own smart card solution for web applications, use the official and newest one
 
 ## Example - Nextcloud App implementation
 
