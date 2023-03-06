@@ -20,7 +20,7 @@
     - has the same functionality as other (Java and .NET) validation libraries
 
 ## UPDATE FALL 2022 !!!!
-- this library was already ported and updated in official Web-eID repository [here](https://github.com/web-eid/web-eid-authtoken-validation-php) (check branch `development`)
+- this library was already ported and updated in official Web-eID repository [here](https://github.com/web-eid/web-eid-authtoken-validation-php)
 - if you wish to try InfinitEID, use this library
 - if you wish to develop your own smart card solution for web applications, use the official and newest one
 
